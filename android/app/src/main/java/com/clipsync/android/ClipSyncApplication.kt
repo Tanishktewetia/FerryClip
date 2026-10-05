@@ -9,6 +9,6 @@ class ClipSyncApplication : Application() {
         super.onCreate()
         FileLogger.init(this)
         CrashHandler.init(this)
-        FileLogger.info("ClipSync v${BuildConfig.VERSION_NAME} starting")
+        FileLogger.info("FerryClip v${BuildConfig.VERSION_NAME} starting")
     }
 }

@@ -18,19 +18,19 @@ import com.clipsync.android.BuildConfig
 fun AboutScreen(onBack: () -> Unit, onHelp: () -> Unit) {
     BackHandler(onBack = onBack)
     val links = LocalUriHandler.current
-    Scaffold(topBar = { TopAppBar(title = { Text("About ClipSync") }, navigationIcon = {
+    Scaffold(topBar = { TopAppBar(title = { Text("About FerryClip") }, navigationIcon = {
         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back to Settings") }
     }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             BrandHeader("Your clipboard, between your devices")
             Text("Made for your PC and your phone", style = MaterialTheme.typography.headlineMedium)
-            Text("ClipSync shares plain text over your local Wi-Fi. Windows copies arrive automatically on Android. To send phone text back, tap Send clipboard now in the notification or the Send to PC tile.", style = MaterialTheme.typography.bodyLarge)
+            Text("FerryClip shares plain text over your local Wi-Fi. Windows copies arrive automatically on Android. To send phone text back, tap Send clipboard now in the notification or the Send to PC tile.", style = MaterialTheme.typography.bodyLarge)
             HorizontalDivider()
             Text("Private by design", style = MaterialTheme.typography.titleMedium)
             Text("Connections use TLS and saved certificate identities. Pair by comparing a code, choose one active PC, and pause whenever you want. Clipboard text is kept in memory, not saved as a history or written into app logs.")
             Text("Version ${BuildConfig.VERSION_NAME} · Text sync", style = MaterialTheme.typography.bodyMedium)
-            Text("Project: Tanishktewetia / ClipSync", style = MaterialTheme.typography.bodyMedium)
-            Button(onClick = onHelp, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("Read the ClipSync guide") }
+            Text("Project: Tanishktewetia / FerryClip", style = MaterialTheme.typography.bodyMedium)
+            Button(onClick = onHelp, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("Read the FerryClip guide") }
             OutlinedButton(onClick = { links.openUri(PROJECT_URL) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("GitHub · Source & documentation") }
             OutlinedButton(onClick = { links.openUri("$PROJECT_URL/issues") }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("Report an issue on GitHub") }
             Text("Need support? Settings → Diagnostics lets you share connection logs. Remove personal details before posting a public issue.", style = MaterialTheme.typography.bodySmall)

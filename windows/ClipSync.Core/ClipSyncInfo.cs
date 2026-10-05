@@ -5,6 +5,6 @@ namespace ClipSync.Core;
 /// </summary>
 public static class ClipSyncInfo
 {
-    public const string AppName = "ClipSync";
+    public const string AppName = "FerryClip";
     public const string Version = "0.1.0";
 }

@@ -10,7 +10,7 @@ import android.os.Build
 class ClipboardWriter(context: Context) {
     private val clipboard = context.getSystemService(ClipboardManager::class.java)
     fun write(text: String) {
-        val clip = ClipData.newPlainText("ClipSync", text)
+        val clip = ClipData.newPlainText("FerryClip", text)
         clip.description.extras = PersistableBundle().apply {
             // Redacts the OS preview. It cannot promise to hide Android's system overlay.
             putBoolean(if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true)

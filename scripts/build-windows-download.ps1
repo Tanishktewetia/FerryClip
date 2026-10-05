@@ -21,7 +21,7 @@ $publishArgs = @('publish', $project, '-c', 'Release', '--self-contained', 'fals
 & 'C:\Program Files\dotnet\dotnet.exe' @publishArgs
 if ($LASTEXITCODE -ne 0) { throw "Windows publish failed: $LASTEXITCODE" }
 
-$exe = Join-Path $publish 'ClipSync.exe'
+$exe = Join-Path $publish 'FerryClip.exe'
 $info = [Diagnostics.FileVersionInfo]::GetVersionInfo($exe)
 if (-not $info.ProductVersion.StartsWith($version)) { throw 'Published executable version does not match the project.' }
 $payloadBytes = (Get-ChildItem -LiteralPath $publish -File | Measure-Object Length -Sum).Sum
@@ -34,9 +34,9 @@ Set-Content -LiteralPath (Join-Path $staging 'Install-ClipSync.ps1') -Value $ins
 Copy-Item -LiteralPath (Join-Path $installerSource 'Uninstall-ClipSync.ps1') -Destination (Join-Path $staging 'Uninstall-ClipSync.ps1')
 Set-Content -LiteralPath (Join-Path $staging 'install.cmd') -Encoding ascii -Value "@echo off`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"%~dp0Install-ClipSync.ps1`"`r`nexit /b %ERRORLEVEL%`r`n"
 
-$filename = "ClipSync-Setup-$version-win-x64.exe"
+$filename = "FerryClip-Setup-$version-win-x64.exe"
 $target = Join-Path $root "dist\$filename"
-$sed = Join-Path $staging 'ClipSync-Setup.sed'
+$sed = Join-Path $staging 'FerryClip-Setup.sed'
 $source = $staging.TrimEnd('\') + '\'
 $sedText = @"
 [Version]
@@ -66,7 +66,7 @@ InstallPrompt=
 DisplayLicense=
 FinishMessage=
 TargetName=$target
-FriendlyName=ClipSync Setup
+FriendlyName=FerryClip Setup
 AppLaunched=install.cmd
 PostInstallCmd=<None>
 AdminQuietInstCmd=install.cmd

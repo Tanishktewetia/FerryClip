@@ -24,4 +24,4 @@ http.createServer((req, res) => {
     if (req.method === 'HEAD') { res.end(); return; }
     const stream = fs.createReadStream(file); stream.on('error', () => res.destroy()); stream.pipe(res);
   } catch { res.writeHead(404); res.end('Not found'); }
-}).listen(port, host, () => console.log(`ClipSync preview: http://${host}:${port} — serving only ${root}`));
+}).listen(port, host, () => console.log(`FerryClip preview: http://${host}:${port} — serving only ${root}`));

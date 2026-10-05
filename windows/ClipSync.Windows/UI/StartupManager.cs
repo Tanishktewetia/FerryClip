@@ -1,4 +1,4 @@
-using System.Reflection;
+using System.IO;
 using Microsoft.Win32;
 using ClipSync.Windows.Logging;
 
@@ -36,7 +36,7 @@ public static class StartupManager
             if (key is null) return false;
             if (enabled)
             {
-                var executable = Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location;
+                var executable = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "FerryClip.exe");
                 key.SetValue(ValueName, BuildCommand(executable), RegistryValueKind.String);
             }
             else

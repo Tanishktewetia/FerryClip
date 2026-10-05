@@ -39,7 +39,6 @@ logs/
 *.log
 architecture.md
 plan.md
-RULES.md
 LOG.md
 
 # Automated test reports and generated identities remain local
@@ -62,3 +61,4 @@ TestResults/
 /scripts/verify-windows-installer.ps1
 /site/verify-downloads.cjs
 /site/verify-motion.cjs
+!/RULES.md

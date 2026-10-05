@@ -21,7 +21,7 @@
     document.querySelectorAll('.download-status').forEach(status => { status.textContent = link.origin !== location.origin
       ? `GitHub releases opened. Select the latest ${windows ? 'Windows installer' : 'Android APK'} there.`
       : windows
-        ? 'Windows installer download requested. Verify its checksum, then run setup. ClipSync will start in the system tray.'
+        ? 'Windows installer download requested. Verify its checksum, then run setup. FerryClip will start in the system tray.'
         : 'Android APK download requested. Open it from Downloads and follow the sideloading guide.'; });
   }));
   const checksum = document.querySelector('[data-checksum]');
@@ -48,7 +48,7 @@
   const starts = {pair:26000,pc:0,tile:6500,phone:16500};
   const snapshots = {pair:31800,pc:5400,tile:14700,phone:24600};
   const scenes = [
-    {at:0,chapter:'pc',state:'pc-copy',title:'Copy on Windows. No extra action.',detail:'PC → phone is automatic while connected and unlocked.',message:'Copy text on Windows. ClipSync handles the transfer.',labels:['Copy','Transfer','Paste'],active:0},
+    {at:0,chapter:'pc',state:'pc-copy',title:'Copy on Windows. No extra action.',detail:'PC → phone is automatic while connected and unlocked.',message:'Copy text on Windows. FerryClip handles the transfer.',labels:['Copy','Transfer','Paste'],active:0},
     {at:1800,chapter:'pc',state:'pc-transfer',title:'Straight to your phone. Automatically.',detail:'Text travels over your local network, not through a cloud clipboard.',message:'Windows → Android · encrypted over your Wi-Fi.',labels:['Copy','Transfer','Paste'],active:1},
     {at:4400,chapter:'pc',state:'pc-received',title:'Paste on Android. Keep going.',detail:'No Receive button to tap. Your text is already there.',message:'Ready on Android. That is the automatic direction.',labels:['Copy','Transfer','Paste'],active:2},
     {at:6500,chapter:'tile',state:'tile-swipe',title:'For the other direction, add a shortcut once.',detail:'Swipe down twice from the top of your phone to open Quick Settings.',message:'Tiles are the buttons beside Wi-Fi, Bluetooth and the flashlight.',labels:['Open panel','Add tile','Done'],active:0},
@@ -57,13 +57,13 @@
     {at:13500,chapter:'tile',state:'tile-added',title:'Done. Your Send to PC shortcut is ready.',detail:'You only add it once—not before every copy. Layout varies by phone.',message:'Alternative: use Send clipboard now in the persistent notification.',labels:['Open panel','Add tile','Done'],active:2},
     {at:16500,chapter:'phone',state:'phone-copy',title:'Copy text on Android first.',detail:'Copying alone does not send. Android requires your deliberate action.',message:'Phone → PC starts with your copy, not a silent background read.',labels:['Copy','Tap tile','Send to PC'],active:0},
     {at:18700,chapter:'phone',state:'phone-panel',title:'Open Quick Settings. Your tile is already there.',detail:'Swipe down twice, just as you would for Wi-Fi or Bluetooth.',message:'No need to add the tile again. Unlock first if asked.',labels:['Copy','Tap tile','Send to PC'],active:1},
-    {at:20500,chapter:'phone',state:'phone-tap',title:'Tap Send to PC to share this copy.',detail:'That one tap lets ClipSync read the text and send it to Windows.',message:'This is the intentional send action—not an automatic phone clipboard read.',labels:['Copy','Tap tile','Send to PC'],active:1},
+    {at:20500,chapter:'phone',state:'phone-tap',title:'Tap Send to PC to share this copy.',detail:'That one tap lets FerryClip read the text and send it to Windows.',message:'This is the intentional send action—not an automatic phone clipboard read.',labels:['Copy','Tap tile','Send to PC'],active:1},
     {at:22200,chapter:'phone',state:'phone-transfer',title:'Now the text travels back to Windows.',detail:'Phone → PC, over the same paired, encrypted connection.',message:'Android → Windows · sent only after tapping the tile.',labels:['Copy','Tap tile','Send to PC'],active:2},
     {at:24300,chapter:'phone',state:'phone-received',title:'Paste on your PC. Both directions, explained.',detail:'PC → phone is automatic. Phone → PC is one deliberate tap.',message:'Ready on Windows. The walkthrough will repeat.',labels:['Copy','Tap tile','Send to PC'],active:2},
-    {at:26000,chapter:'pair',state:'pair-windows',title:'On Windows, choose Pair new device.',detail:'ClipSync stays in the system tray. Open it and start one secure pairing window.',message:'Step 1 of 4 · Open the Windows tray app and choose Pair new device.',labels:['Windows','Android','Confirm'],active:0},
-    {at:27900,chapter:'pair',state:'pair-search',title:'On Android, tap Find a PC.',detail:'Keep both devices on the same Wi-Fi. No IP address is normally needed.',message:'Step 2 of 4 · Your phone discovers the waiting Windows PC nearby.',labels:['Windows','Android','Confirm'],active:1},
-    {at:29700,chapter:'pair',state:'pair-code',title:'Compare all six digits on both screens.',detail:'Only continue when the Windows and Android codes are identical.',message:'Step 3 of 4 · Matching codes protect you from pairing the wrong device.',labels:['Windows','Android','Confirm'],active:2},
-    {at:31600,chapter:'pair',state:'pair-done',title:'Confirm on Android. You are connected.',detail:'Pairing is saved. ClipSync will reconnect and start quietly with Windows.',message:'Step 4 of 4 · Pair once, then use the clipboard normally.',labels:['Windows','Android','Confirm'],active:2}
+    {at:26000,chapter:'pair',state:'pair-windows',title:'On Windows, choose Pair new device.',detail:'FerryClip stays in the system tray. Open it and start one secure pairing window.',message:'Step 1 of 4 · Open the Windows tray app and choose Pair new device.',labels:['Windows','Android','Confirm'],active:0},
+    {at:27900,chapter:'pair',state:'pair-search',title:'Enter the Windows code on Android.',detail:'Use the same reachable Wi-Fi, hotspot, or VPN-routed LAN. Internet is not required.',message:'Step 2 of 3 · Type the temporary code shown in the Windows pairing window.',labels:['Windows','Android','Enter code'],active:1},
+    {at:29700,chapter:'pair',state:'pair-code',title:'Enter the six-digit code from Windows.',detail:'The short-lived code is entered on the phone; no comparison is needed.',message:'Step 3 of 3 · Pair only with a code you just generated on your own PC.',labels:['Windows','Android','Enter code'],active:2},
+    {at:31600,chapter:'pair',state:'pair-done',title:'Confirm on Android. You are connected.',detail:'Pairing is saved. FerryClip will reconnect and start quietly with Windows.',message:'Step 4 of 4 · Pair once, then use the clipboard normally.',labels:['Windows','Android','Enter code'],active:2}
   ];
   let paused = false, visible = false, started = false, running = true;
   let elapsed = 0, cycle = 0, lastTime = null, frame = 0, lastScene = '';
@@ -170,7 +170,7 @@
     if(wireAnimation)wireAnimation.currentTime=progress*1000;
     let active=0;steps.forEach((step,index)=>{if(step.getBoundingClientRect().top<innerHeight*.62)active=index;});
     steps.forEach((step,index)=>step.classList.toggle('is-current',index===active));story.dataset.activeStep=String(active);
-    story.querySelector('.story-caption').textContent=['Find your devices','Compare all six digits','Connected. Carry on.'][active];
+    story.querySelector('.story-caption').textContent=['Enter your PC code','Pair securely','Connected. Carry on.'][active];
   }
   const queueScroll=()=>{if(!scrollFrame)scrollFrame=requestAnimationFrame(renderScroll);};
   window.addEventListener('scroll',queueScroll,{passive:true});

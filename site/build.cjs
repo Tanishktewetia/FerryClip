@@ -9,7 +9,7 @@ const sha256 = data => crypto.createHash('sha256').update(data).digest('hex');
 const mib = bytes => `${(bytes / 1048576).toFixed(bytes < 2 * 1048576 ? 1 : 0)} MB`;
 
 if (process.env.VERCEL === '1') {
-  const releases = 'https://github.com/Tanishktewetia/ClipSync/releases';
+  const releases = 'https://github.com/Tanishktewetia/FerryClip/releases';
   const replacements = source => source
     .replaceAll('href="downloads/windows-setup.exe" download', `href="${releases}" target="_blank" rel="noopener noreferrer"`)
     .replaceAll('href="downloads/android.apk" download', `href="${releases}" target="_blank" rel="noopener noreferrer"`)
@@ -27,7 +27,7 @@ if (process.env.VERCEL === '1') {
   for (const file of ['index.html','docs.html']) {
     fs.writeFileSync(path.join(destination,file), replacements(fs.readFileSync(path.join(__dirname,file),'utf8')));
   }
-  for (const file of ['style.css','app.js','mark.svg']) {
+  for (const file of ['style.css','app.js','FerryClip-logo.png']) {
     fs.copyFileSync(path.join(__dirname,file),path.join(destination,file));
   }
   console.log(`Built Vercel static site: ${destination}. Binary downloads link to GitHub Releases.`);
@@ -40,7 +40,7 @@ const androidElement = android.elements.find(element => element.outputFile);
 if (!androidElement?.versionName || !androidElement?.versionCode) throw new Error('Build the optimized Android release APK first.');
 const apk = path.join(androidOutput, androidElement.outputFile);
 if (!fs.existsSync(apk)) throw new Error(`Android APK missing: ${apk}`);
-const apkName = `ClipSync-beta-${androidElement.versionName}.apk`;
+const apkName = `FerryClip-beta-${androidElement.versionName}.apk`;
 const apkBytes = fs.readFileSync(apk);
 if (apkBytes.subarray(0, 2).toString('ascii') !== 'PK') throw new Error('Android artifact is not a valid APK/ZIP file.');
 
@@ -69,7 +69,7 @@ const downloads = path.join(destination, 'downloads');
 fs.rmSync(downloads, {recursive:true, force:true});
 fs.mkdirSync(downloads, {recursive:true});
 for (const file of ['index.html','docs.html']) fs.writeFileSync(path.join(destination,file), replacements(fs.readFileSync(path.join(__dirname,file),'utf8')));
-for (const file of ['style.css','app.js','mark.svg']) fs.copyFileSync(path.join(__dirname,file),path.join(destination,file));
+for (const file of ['style.css','app.js','FerryClip-logo.png']) fs.copyFileSync(path.join(__dirname,file),path.join(destination,file));
 for (const item of artifacts) {
   fs.writeFileSync(path.join(downloads,item.filename),item.data);
   if (item.platform === 'android') fs.writeFileSync(path.join(root,'dist',item.filename),item.data);

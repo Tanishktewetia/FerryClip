@@ -2,7 +2,6 @@ package com.clipsync.android.ui
 
 import android.Manifest
 import android.content.ClipData
-import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.ContentValues
 import android.content.Intent
@@ -29,7 +28,7 @@ import com.clipsync.android.security.ManualAddress
 import com.clipsync.android.service.ClipboardWatchService
 import com.clipsync.android.service.SyncRuntime
 import com.clipsync.android.store.SyncSettings
-import com.clipsync.android.ui.theme.ClipSyncTheme
+import com.clipsync.android.ui.theme.FerryClipTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var settings: SyncSettings
@@ -45,27 +44,32 @@ class MainActivity : ComponentActivity() {
         ClipboardReadStore.initialize(this)
         SyncRuntime.initialize(this)
         val lastCrash = CrashHandler.consumeLastCrash()
-        FileLogger.info("Phase 8.5 dashboard/setup opened")
+        FileLogger.info("FerryClip dashboard/setup opened")
         setContent {
             var replay by remember { mutableStateOf(settings.replayOnConnect) }
             var step by remember { mutableIntStateOf(settings.onboardingStep.coerceIn(0, 3)) }
-            var done by remember { mutableStateOf(settings.onboardingDone) }
+            var done by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(settings.onboardingDone) }
+            var replayingSetup by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+            val pageState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
             val revision = setupRevision
             val notifications = remember(revision) { androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled() }
             val battery = remember(revision) { getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName) }
             val tile = remember(revision) { settings.tileAdded || settings.tileDismissed }
-            ClipSyncTheme {
+            FerryClipTheme {
+                pageState.SaveableStateProvider(if(done) "dashboard" else "onboarding") {
                 if (!done) OnboardingScreen(step, notifications, battery, settings.tileAdded,
                     advance = { step = it; settings.onboardingStep = it },
-                    finish = { done = true; settings.onboardingDone = true },
+                    finish = { done = true; settings.onboardingDone = true; replayingSetup = false },
+                    exitReplay = if(replayingSetup) ({ done = true; settings.onboardingDone = true; replayingSetup = false }) else null,
                     requestNotifications = ::requestNotifications, requestBattery = ::requestBattery, addTile = ::addSendTile)
                 else MainScreen(state = SyncRuntime.state.collectAsState().value, lastCrash = lastCrash,
                     notifications = notifications, battery = battery, tile = tile,
                     onNotifications = ::requestNotifications, onBattery = ::requestBattery, onTile = ::addSendTile,
                     onDismissTile = { settings.tileDismissed = true; setupRevision++ },
-                    onRedo = { step = 0; settings.onboardingStep = 0; done = false; settings.onboardingDone = false },
+                    onRedo = { replayingSetup = true; step = 0; settings.onboardingStep = 0; done = false; settings.onboardingDone = false },
                     onConnect = { command(ClipboardWatchService.ACTION_CONNECT, it) },
-                    onPair = ::pair, onPause = ::pause,
+                    onDisconnect = { command(ClipboardWatchService.ACTION_DISCONNECT, it) },
+                    onPair = ::pair, onCancelPair = { command(ClipboardWatchService.ACTION_CANCEL_PAIR) }, onPause = ::pause,
                     onForget = { command(ClipboardWatchService.ACTION_FORGET, it) },
                     onRename = { id, name ->
                         val devices = SyncRuntime.state.value.devices.map { if (it.id == id) it.copy(displayName = name) else it }
@@ -74,6 +78,7 @@ class MainActivity : ComponentActivity() {
                     onPairCode = { id, code -> SyncRuntime.onPairCode?.invoke(id, code) },
                     onCopyLogs = ::copyLogs, onShareLogs = ::shareLogs, onSaveLogs = ::saveLogs,
                     replayOnConnect = replay, onReplayChanged = { replay = it; settings.replayOnConnect = it })
+                }
             }
         }
         // Restarts only an already enabled, paired discovery session.
@@ -119,43 +124,37 @@ class MainActivity : ComponentActivity() {
         runCatching { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) }
             .onFailure { runCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) } }
     }
-    private fun pair(address: String, replacement: String?) {
-        try { if (address.isNotBlank()) com.clipsync.android.service.PairingController.endpoint(address) }
-        catch (e: IllegalArgumentException) { SyncRuntime.update { it.copy(pairingMessage = e.message, pairingFailed = true) }; return }
-        command(ClipboardWatchService.ACTION_PAIR, replacement, address)
-    }
-    private fun command(action: String, deviceId: String? = null, address: String = "") {
+    private fun pair(code: String, replacement: String?) { command(ClipboardWatchService.ACTION_PAIR, replacement, code) }
+    private fun command(action: String, deviceId: String? = null, code: String = "") {
         ClipboardReadStore.setServiceEnabled(true)
         try {
             ContextCompat.startForegroundService(this, Intent(this, ClipboardWatchService::class.java).setAction(action)
-                .putExtra("deviceId", deviceId).putExtra("address", address))
+                .putExtra("deviceId", deviceId).putExtra("pairingCode", code))
         } catch (e: Exception) {
             FileLogger.warn("Service start failed: " + e.javaClass.simpleName)
             SyncRuntime.update { it.copy(error = "Could not start background sync. Try again from the dashboard.") }
         }
     }
-    private fun pause(paused: Boolean) {
-        settings.paused = paused
-        SyncRuntime.receiver.setPaused(paused)
-        if (paused) SyncRuntime.sender.clear()
-        SyncRuntime.update { it.copy(paused = paused, pendingUnlock = SyncRuntime.receiver.hasDeferred) }
-        if (SyncRuntime.state.value.running) startService(Intent(this, ClipboardWatchService::class.java)
-            .setAction(ClipboardWatchService.ACTION_PAUSE).putExtra("paused", paused))
+    private fun pause(id: String, paused: Boolean) {
+        runCatching { startService(Intent(this, ClipboardWatchService::class.java).setAction(ClipboardWatchService.ACTION_PAUSE)
+            .putExtra("deviceId", id).putExtra("paused", paused)) }
     }
     private fun copyLogs() {
         val text = FileLogger.getRecentLogs()
         SyncRuntime.receiver.engine.hashGuard.observeLocal(text)
-        val clip = ClipData.newPlainText("ClipSync Diagnostics", text).apply {
-            description.extras = PersistableBundle().apply { putBoolean(if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true) }
+        val payload = com.clipsync.android.logging.DiagnosticsShare.clipboardPayload(text)
+        val clip = ClipData.newPlainText(payload.label, payload.text)
+        if (payload.isSensitive) clip.description.extras = PersistableBundle().apply {
+            putBoolean(if (Build.VERSION.SDK_INT >= 33) "android.content.extra.IS_SENSITIVE" else "android.content.extra.IS_SENSITIVE", true)
         }
         getSystemService(ClipboardManager::class.java).setPrimaryClip(clip)
         FileLogger.info("Diagnostics copied by user")
     }
     private fun shareLogs() {
         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, "ClipSync Diagnostics")
+            type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, "FerryClip Diagnostics")
             putExtra(Intent.EXTRA_TEXT, FileLogger.getRecentLogs())
-        }, "Share ClipSync diagnostics"))
+        }, "Share FerryClip diagnostics"))
     }
     private fun saveLogs() {
         if (Build.VERSION.SDK_INT < 29) { saveDocument.launch("clipsync-logs.txt"); return }

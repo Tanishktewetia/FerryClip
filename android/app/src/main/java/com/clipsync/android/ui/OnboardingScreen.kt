@@ -16,16 +16,16 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun OnboardingScreen(step: Int, notifications: Boolean, battery: Boolean, tile: Boolean,
-    advance: (Int) -> Unit, finish: () -> Unit, requestNotifications: () -> Unit, requestBattery: () -> Unit, addTile: () -> Unit) {
+    advance: (Int) -> Unit, finish: () -> Unit, requestNotifications: () -> Unit, requestBattery: () -> Unit, addTile: () -> Unit, exitReplay: (() -> Unit)? = null) {
     val page = step.coerceIn(0, 3)
-    val titles = listOf("Your clipboard. On both devices.", "Send without opening ClipSync", "Keep the connection ready", "A shortcut beside your Wi-Fi")
+    val titles = listOf("Copy on your PC. Paste on your phone.", "Pair once with a connection code", "Keep sharing in the background", "Send from anywhere")
     val descriptions = listOf(
-        "ClipSync shares plain text between your Windows PC and Android phone over the same Wi-Fi. No account or cloud clipboard needed.",
-        "The quiet ClipSync notification shows your connection and includes Send clipboard now. One tap sends text you copied on your phone to your active PC.",
-        "Android can limit apps when the screen is off. Allowing background battery use helps ClipSync keep receiving PC copies and recover its connection.",
+        "FerryClip shares plain text between your Windows PC and Android phone over the same Wi-Fi, hotspot, or local VPN. No account, cloud, or internet connection is needed.",
+        "Join the same Wi-Fi, or connect your PC to your phone hotspot. On Windows, select Generate code to connect. Enter the six digits in FerryClip on your phone.",
+        "Android can limit apps when the screen is off. Allowing background battery use helps FerryClip keep receiving PC copies and recover its connection.",
         "Send to PC is a Quick Settings tile. Add it once, then copy text in any app and tap the tile to send it to your active PC.")
-    val complete = when(page) { 1 -> notifications; 2 -> battery; 3 -> tile; else -> false }
-    BackHandler(enabled = page > 0) { advance(page - 1) }
+    val complete = when(page) { 2 -> notifications && battery; 3 -> tile; else -> true }
+    BackHandler(enabled = page > 0 || exitReplay != null) { if(page > 0) advance(page - 1) else exitReplay?.invoke() }
     Scaffold(containerColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground,
         bottomBar = {
             Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface) {
@@ -42,12 +42,12 @@ fun OnboardingScreen(step: Int, notifications: Boolean, battery: Boolean, tile: 
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(Modifier.widthIn(max = 560.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                BrandHeader("A shared clipboard, on your terms")
+                BrandHeader("Android + Windows · local sharing")
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Set up ClipSync", style = MaterialTheme.typography.titleSmall)
+                    Text("Set up FerryClip", style = MaterialTheme.typography.titleSmall)
                     Text("${page + 1} of 4", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                LinearProgressIndicator(progress = { (page + 1) / 4f }, modifier = Modifier.fillMaxWidth())
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { repeat(4) { index -> Surface(modifier = Modifier.weight(1f).height(4.dp), shape = MaterialTheme.shapes.small, color = if(index <= page) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant) { } } }
                 SetupIllustration(page)
                 Text(titles[page], style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground)
                 Text(descriptions[page], style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
@@ -55,17 +55,19 @@ fun OnboardingScreen(step: Int, notifications: Boolean, battery: Boolean, tile: 
                     0 -> {
                         SetupExplanation("PC → phone", "Automatic. Copy on Windows, then paste on your phone.")
                         SetupExplanation("Phone → PC", "Copy text, then tap the notification action or Send to PC tile.")
-                        Text("Pair once by comparing a six-digit code. You decide which PC is active.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("No account. No cloud. Your clipboard travels only over your local connection.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    1, 2 -> {
-                        if (complete) SetupComplete(if(page == 1) "Notifications are enabled" else "Background battery use is allowed")
-                        else Button(onClick = if(page == 1) requestNotifications else requestBattery,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = MaterialTheme.shapes.medium) {
-                            Text(if(page == 1) "Allow notifications" else "Allow background battery use")
-                        }
-                        Text(if(page == 1) "Optional: PC-to-phone copies still work without notification permission. You can enable it later in Settings."
-                            else "Optional: skipping may make background connections less reliable. You can change this later in Android Settings.",
-                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    1 -> {
+                        SetupExplanation("1. Same network", "Use shared Wi-Fi or a hotspot in either direction.")
+                        SetupExplanation("2. Generate on Windows", "Open the tray panel and select Generate code to connect.")
+                        SetupExplanation("3. Enter on Android", "Type the code on the dashboard. Cancel anytime to try a new code.")
+                    }
+                    2 -> {
+                        SetupExplanation("Notifications", "Connection status and a one-tap Send clipboard action.")
+                        OutlinedButton(onClick = requestNotifications, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if(notifications) "Review notification settings" else "Allow notifications") }
+                        SetupExplanation("Background activity", "Reduce Android battery restrictions so the connection can recover while the screen is off.")
+                        OutlinedButton(onClick = requestBattery, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if(battery) "Background activity allowed" else "Allow background activity") }
+                        Text("Both are optional and can be changed later in Settings.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     3 -> {
                         TileInstructions()
@@ -87,7 +89,7 @@ fun BrandHeader(subtitle: String) {
         Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
             Icon(Icons.Outlined.ContentCopy, null, Modifier.padding(12.dp).size(28.dp))
         }
-        Column { Text("ClipSync", style = MaterialTheme.typography.titleLarge)
+        Column { Text("FerryClip", style = MaterialTheme.typography.titleLarge)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
@@ -100,9 +102,9 @@ private fun SetupExplanation(title: String, body: String) {
 }
 @Composable
 private fun SetupComplete(label: String) {
-    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Outlined.CheckCircle, null); Text(label, style = MaterialTheme.typography.titleSmall)
+            Icon(Icons.Outlined.Info, null); Text(label, style = MaterialTheme.typography.titleSmall)
         }
     }
 }
@@ -120,19 +122,16 @@ private fun SetupIllustration(page: Int) {
                     Text("One local connection. Two places to paste.", style = MaterialTheme.typography.bodyMedium)
                 }
                 1 -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.NotificationsNone, null); Text("ClipSync", style = MaterialTheme.typography.titleSmall)
-                    }
-                    Text("Connected to your PC", style = MaterialTheme.typography.bodyMedium)
-                    HorizontalDivider()
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(Icons.AutoMirrored.Outlined.Send, null); Text("Send clipboard now", color = MaterialTheme.colorScheme.primary) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Icon(Icons.Outlined.LaptopWindows, null); Text("Windows", style = MaterialTheme.typography.labelLarge); Icon(Icons.Outlined.PhoneAndroid, null) }
+                    Text("123 456", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                    Text("Generate on PC → enter on phone", style = MaterialTheme.typography.bodyMedium)
                 }
                 2 -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.BatteryChargingFull, null, Modifier.size(52.dp))
                         Column { Text("Screen off", style = MaterialTheme.typography.titleSmall); Text("Connection stays ready", style = MaterialTheme.typography.bodyMedium) }
                     }
-                    Text("Receive PC copies while ClipSync is in the background.", style = MaterialTheme.typography.bodyMedium)
+                    Text("Receive PC copies while FerryClip is in the background.", style = MaterialTheme.typography.bodyMedium)
                 }
                 3 -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) { Icon(Icons.Outlined.Wifi, "Wi-Fi"); Icon(Icons.Outlined.Bluetooth, "Bluetooth"); Icon(Icons.Outlined.Edit, "Edit tiles") }

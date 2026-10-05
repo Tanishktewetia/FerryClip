@@ -45,7 +45,7 @@ private val DarkColorScheme = darkColorScheme(
     errorContainer = Color(0xFF392629), onErrorContainer = Color(0xFFFFD9D9),
 )
 @Composable
-fun ClipSyncTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun FerryClipTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
         typography = ClipSyncTypography,
         shapes = Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(10.dp),

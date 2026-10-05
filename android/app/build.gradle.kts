@@ -12,15 +12,19 @@ android {
         applicationId = "com.clipsync.android"
         minSdk = 24
         targetSdk = 34
-        versionCode = 11
-        versionName = "0.8.5.2"
+        versionCode = 15
+        versionName = "0.8.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += "en"
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "DIAGNOSTICS_ENABLED", "true")
+        }
         release {
+            buildConfigField("boolean", "DIAGNOSTICS_ENABLED", providers.gradleProperty("enableDiagnostics").orElse("false").get().toBoolean().toString())
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")

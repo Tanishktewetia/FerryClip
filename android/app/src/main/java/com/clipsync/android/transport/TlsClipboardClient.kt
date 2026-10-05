@@ -28,7 +28,7 @@ import javax.net.ssl.SSLSocket
 class ConnectionProblem(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /** One Wi-Fi-bound authenticated connection. Discovery never changes trust. */
-class TlsClipboardClient(private val context: Context, private val settings: SyncSettings, private val journal: ReconnectJournal = ReconnectJournal(settings.deviceId), private val peerPin: String? = null) {
+class TlsClipboardClient(private val context: Context, private val settings: SyncSettings, private val journal: ReconnectJournal = ReconnectJournal(settings.deviceId), private val peerPin: String? = null, private val isPaused: () -> Boolean = { settings.paused }) {
     @Volatile var stage = ConnectionStage.IDLE
         private set
     private fun stage(next: ConnectionStage) {
@@ -36,6 +36,8 @@ class TlsClipboardClient(private val context: Context, private val settings: Syn
         FileLogger.info("Connection stage: "+next.name)
     }
     @Volatile var network: Network? = null
+        private set
+    @Volatile var route: LocalPeerRoute? = null
         private set
     @Volatile private var readySocket: SSLSocket? = null
     private val writeLock = Any()
@@ -64,17 +66,16 @@ class TlsClipboardClient(private val context: Context, private val settings: Syn
     }
     @Synchronized fun close() { heartbeatWatchdog?.cancel(); closed = true; readySocket = null; runCatching { socket?.close() }; socket = null }
 
-    suspend fun run(address: String, port: Int = PORT,
+    suspend fun run(address: String, port: Int = PORT, routeOverride: LocalPeerRoute? = null,
                     connected: suspend () -> Unit, receive: suspend (String) -> Unit) {
         val ip = ManualAddress.parse(address)
         stage(ConnectionStage.WIFI_ROUTE)
         val manager = context.getSystemService(ConnectivityManager::class.java)
         // One-shot Wi-Fi route selection only. The service handles saved-IP lifecycle recovery.
-        @Suppress("DEPRECATION")
-        val wifi = manager.allNetworks.firstOrNull { network ->
-            manager.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
-        } ?: throw ConnectionProblem("Join the same Wi-Fi or PC hotspot, then tap Reconnect.")
-        network = wifi
+        val route = routeOverride ?: LocalNetwork.routeForLocalPeer(manager)
+            ?: throw ConnectionProblem("Connect to a reachable Wi-Fi, hotspot, Ethernet, or VPN network, then tap Reconnect.")
+        this.route = route
+        network = route.network
         stage(ConnectionStage.PIN_STORAGE)
         val pin = peerPin
         if (pin == null) throw ConnectionProblem("Pair this phone with your PC first.")
@@ -82,7 +83,7 @@ class TlsClipboardClient(private val context: Context, private val settings: Syn
         val identity = KeyStoreIdentity()
         val trust = PinnedTrustManager(pin, false)
         val tls = SSLContext.getInstance("TLS").apply { init(arrayOf(identity), arrayOf(trust), null) }
-        val tcp = wifi.socketFactory.createSocket()
+        val tcp = route.createSocket()
         own(tcp)
         try {
             stage(ConnectionStage.TCP_CONNECT)

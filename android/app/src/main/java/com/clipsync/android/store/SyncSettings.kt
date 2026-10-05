@@ -76,16 +76,15 @@ class SyncSettings(context: Context) {
             val d = json.getJSONObject(index)
             PairedDevice(d.getString("id"), d.getString("name"), d.getString("host"), com.clipsync.android.security.PairingProtocol.fingerprint(d.getString("pin")),
                 d.getString("address"), if (d.isNull("last")) null else d.getLong("last"),
-                DeviceState.Available, d.optBoolean("active", false))
-        }.also { require(it.count { d -> d.isActive } <= 1); require(it.map { d -> d.certFingerprint }.distinct().size == it.size) }
+                DeviceState.Available, d.optBoolean("active", false), paused = d.optBoolean("paused", false))
+        }.also { require(it.map { d -> d.certFingerprint }.distinct().size == it.size) }
     }
     @Synchronized fun saveDevices(devices: List<PairedDevice>) {
-        require(devices.count { it.isActive } <= 1)
         require(devices.map { com.clipsync.android.security.PairingProtocol.fingerprint(it.certFingerprint) }.distinct().size == devices.size)
         val json = org.json.JSONArray()
         devices.forEach { d -> json.put(org.json.JSONObject().put("id", d.id).put("name", d.displayName)
             .put("host", d.hostLabel).put("pin", d.certFingerprint).put("address", d.lastKnownAddress)
-            .put("last", d.lastConnectedAt ?: org.json.JSONObject.NULL).put("active", d.isActive)) }
+            .put("last", d.lastConnectedAt ?: org.json.JSONObject.NULL).put("active", d.isActive).put("paused", d.paused)) }
         val encrypted = com.clipsync.android.security.DeviceListCipher.encrypt(json.toString(), key())
         check(prefs.edit().putString("devices_v2", Base64.encodeToString(encrypted, Base64.NO_WRAP)).remove("peer_pin").commit())
     }

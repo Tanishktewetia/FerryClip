@@ -3,7 +3,7 @@ package com.clipsync.android.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * ClipSync color palette.
+ * FerryClip color palette.
  * Primary: Indigo, Accent: Teal, warm neutrals.
  * Matches the Windows design system for visual coherence.
  */

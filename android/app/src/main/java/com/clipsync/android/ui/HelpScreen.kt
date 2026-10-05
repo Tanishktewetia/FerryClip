@@ -14,14 +14,14 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-const val PROJECT_URL = "https://github.com/Tanishktewetia/ClipSync"
+const val PROJECT_URL = "https://github.com/Tanishktewetia/FerryClip"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpScreen(onBack: () -> Unit, onAddTile: () -> Unit) {
     androidx.activity.compose.BackHandler(onBack = onBack)
     val links = LocalUriHandler.current
-    Scaffold(topBar = { TopAppBar(title = { Text("The ClipSync guide") }, navigationIcon = {
+    Scaffold(topBar = { TopAppBar(title = { Text("The FerryClip guide") }, navigationIcon = {
         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back to connection") }
     }) }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -30,19 +30,19 @@ fun HelpScreen(onBack: () -> Unit, onAddTile: () -> Unit) {
             Text("Connect, copy, stay in control.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Everything you need to connect, copy, and stay in control.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             GuideSection("01", "Connect your devices", listOf(
-                "Install and open ClipSync on your Windows PC and Android phone.",
-                "Join the same Wi-Fi network, or connect your phone to the PC's hotspot. Internet access is not needed for syncing.",
-                "On Windows, open ClipSync from the tray and choose Pair new device. On your phone, tap Find a PC.",
-                "Compare all six digits on both devices. Tap Confirm pairing only if they match. Then expand the new Available tile and tap Connect. Discovery does not bypass this security check."))
+                "Install and open FerryClip on your Windows PC and Android phone.",
+                "Connect both devices to the same Wi-Fi or hotspot, or to the same local VPN. Internet access is not needed for syncing.",
+                "On Windows, open FerryClip from the tray and choose Generate code to connect. Enter the six-digit code shown on the PC in the phone app; FerryClip searches the reachable local network automatically.",
+                "Keep the PC pairing window open until the code is accepted. The new PC appears as an Available tile; tap Connect when ready. Discovery only locates the PC and cannot pair it without the code."))
             GuideSection("02", "Copy on Windows. Paste on Android.", listOf(
                 "Wait for Connected, then copy plain text on Windows as usual.",
                 "Open a text field on your unlocked phone and paste. There is no Receive button to press.",
-                "While your phone is locked, only the latest incoming text waits in memory. Unlock to apply it. Android may still show its own clipboard indicator; ClipSync marks incoming text sensitive to hide the preview."))
+                "While your phone is locked, only the latest incoming text waits in memory. Unlock to apply it. Android may still show its own clipboard indicator; FerryClip marks incoming text sensitive to hide the preview."))
             GuideSection("03", "What is a Quick Settings tile?", listOf(
                 "Tiles are the shortcut buttons next to Wi-Fi, Bluetooth, and the flashlight when you swipe down twice from the top of your phone.",
                 "Tap Add Send to PC below and accept Android's prompt. If no prompt appears, swipe down twice → tap the pencil or Edit → find Send to PC → drag it into the active area → Done.",
-                "Copy text in any app, open Quick Settings, and tap Send to PC. Unlock first if asked. This one tap gives ClipSync permission to read the clipboard.",
-                "Prefer not to add a tile? Tap Send clipboard now in ClipSync's persistent notification instead. Copying on the phone alone never sends anything."))
+                "Copy text in any app, open Quick Settings, and tap Send to PC. Unlock first if asked. This one tap gives FerryClip permission to read the clipboard.",
+                "Prefer not to add a tile? Tap Send clipboard now in FerryClip's persistent notification instead. Copying on the phone alone never sends anything."))
             Button(onClick = onAddTile, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                 Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp)); Text("Add Send to PC tile")
             }
@@ -54,7 +54,7 @@ fun HelpScreen(onBack: () -> Unit, onAddTile: () -> Unit) {
                 "Turn off Apply latest text on reconnect in Settings to preserve the phone clipboard on reconnect. Pause stops both directions while keeping the connection alive. Switching PCs requires an explicit Connect action; Forget requires confirmation. Only the previously active PC reconnects automatically."))
             GuideSection("05", "Something not connecting?", listOf(
                 "Keep both devices on the same private Wi-Fi. Guest networks, VPN routing, or client isolation can block local connections.",
-                "Allow ClipSync through Windows Firewall on your private network. If discovery is blocked, enter the PC's Wi-Fi IPv4 address under Enter IP address instead. Windows hotspot usually uses 192.168.137.1.",
+                "Keep both devices on the same Wi-Fi or hotspot. Allow FerryClip on the active Windows firewall profile; phone hotspots may be Public. Generate a fresh connection code on Windows, then enter it here.",
                 "A certificate mismatch needs your attention. Never approve an unexpected pairing code. Pair again explicitly if you intentionally replaced a device.",
                 "Open Settings → Diagnostics → Share logs. Include the app versions and what action failed. Logs exclude clipboard text; do not paste secrets into an issue."))
             OutlinedButton(onClick = { links.openUri(PROJECT_URL) }, modifier = Modifier.fillMaxWidth()) { Text("Source code & documentation on GitHub") }

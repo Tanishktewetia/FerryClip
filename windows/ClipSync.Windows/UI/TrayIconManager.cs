@@ -1,4 +1,6 @@
 using System.Drawing;
+using System.IO;
+using System.Windows;
 using System.Windows.Forms;
 using ClipSync.Windows.Logging;
 
@@ -14,7 +16,7 @@ public sealed class TrayIconManager : IDisposable
         _statusWindow = statusWindow;
         _notifyIcon = new NotifyIcon
         {
-            Text = "ClipSync — Waiting",
+            Text = "FerryClip — Waiting",
             Visible = true,
             Icon = CreateTrayIcon()
         };
@@ -26,7 +28,7 @@ public sealed class TrayIconManager : IDisposable
         replay.CheckedChanged += (_, _) => replayChanged?.Invoke(replay.Checked);
         menu.Items.Add(replay);
         menu.Items.Add("Open Log Folder", null, OnOpenLogFolder);
-        menu.Items.Add("Quit ClipSync (stop sharing)", null, OnExit);
+        menu.Items.Add("Quit FerryClip (stop sharing)", null, OnExit);
         _notifyIcon.ContextMenuStrip = menu;
         FileLogger.Instance.Info("Tray icon created");
     }
@@ -63,17 +65,17 @@ public sealed class TrayIconManager : IDisposable
     {
         using var bitmap = new Bitmap(32, 32);
         using var graphics = Graphics.FromImage(bitmap);
-        graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-        using var background = new SolidBrush(ColorTranslator.FromHtml("#4F46E5"));
-        graphics.FillEllipse(background, 1, 1, 30, 30);
-        using var font = new Font("Segoe UI", 10, FontStyle.Bold);
-        using var textBrush = new SolidBrush(Color.White);
-        var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-        graphics.DrawString("CS", font, textBrush, new RectangleF(0, 0, 32, 32), format);
+        graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+        graphics.Clear(Color.Transparent);
+        var resource = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Assets/ferryclip_logo.png"))
+            ?? throw new FileNotFoundException("FerryClip tray logo resource is missing.");
+        using (resource.Stream)
+        using (var logo = new Bitmap(resource.Stream))
+            graphics.DrawImage(logo, new Rectangle(1, 6, 30, 20));
         return Icon.FromHandle(bitmap.GetHicon());
     }
 
-    public void ShowNotice(string message) => _notifyIcon.ShowBalloonTip(5000, "ClipSync", message, ToolTipIcon.Info);
+    public void ShowNotice(string message) => _notifyIcon.ShowBalloonTip(5000, "FerryClip", message, ToolTipIcon.Info);
 
     public void Dispose()
     {

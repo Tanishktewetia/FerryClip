@@ -2,18 +2,19 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>0.8.5.1</Version>
+    <Version>0.8.9.0</Version>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <AssemblyName>ClipSync</AssemblyName>
+    <AssemblyName>FerryClip</AssemblyName>
     <RootNamespace>ClipSync.Windows</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ClipSync.Core\ClipSync.Core.csproj" />
+    <Resource Include="Assets\ferryclip_logo.png" />
   </ItemGroup>
 
 </Project>

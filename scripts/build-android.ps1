@@ -9,10 +9,10 @@ if (-not (Test-Path $gradlew)) {
     exit 1
 }
 
-Write-Host "Building optimized ClipSync Android beta APK..." -ForegroundColor Cyan
+Write-Host "Building FerryClip Android beta APK..." -ForegroundColor Cyan
 Push-Location $androidDir
 try {
-    & .\gradlew.bat assembleRelease
+    & .\gradlew.bat assembleRelease -PenableDiagnostics=true
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Android build failed with exit code $LASTEXITCODE"
         exit $LASTEXITCODE
@@ -39,7 +39,7 @@ if (Test-Path $apkSource) {
         }
     }
 
-    $destName = "ClipSync-beta-$version.apk"
+    $destName = "FerryClip-beta-$version.apk"
     $dest = Join-Path $distDir $destName
     Copy-Item $apkSource $dest -Force
     Write-Host "APK copied to: $dest" -ForegroundColor Green

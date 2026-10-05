@@ -1,2 +1,2 @@
-# ClipSync ProGuard Rules
+# FerryClip ProGuard Rules
 # No special rules needed yet.

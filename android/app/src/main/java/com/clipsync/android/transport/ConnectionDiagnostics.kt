@@ -10,6 +10,19 @@ import javax.net.ssl.SSLException
  */
 enum class ConnectionStage { IDLE, WIFI_ROUTE, PIN_STORAGE, KEYSTORE_IDENTITY, TCP_CONNECT, TLS_HANDSHAKE, PAIRING_OFFER, PAIRING_CONFIRM, PIN_SAVE, RECEIVING }
 object ConnectionDiagnostics {
+    private val failureLock = Any()
+    private val lastControlFailureAt = mutableMapOf<String, Long>()
+    private const val CONTROL_FAILURE_LOG_INTERVAL_MS = 10_000L
+
+    /** Bounds duplicate discovery-probe warnings when Android exposes stale tether routes. */
+    fun shouldLogControlFailure(stage: String, type: String, nowElapsedMs: Long): Boolean = synchronized(failureLock) {
+        val key = "$stage:$type"
+        val last = lastControlFailureAt[key]
+        if (last == null || nowElapsedMs - last >= CONTROL_FAILURE_LOG_INTERVAL_MS || nowElapsedMs < last) {
+            lastControlFailureAt[key] = nowElapsedMs
+            true
+        } else false
+    }
     fun causes(error: Throwable): List<Throwable> {
         val chain = mutableListOf<Throwable>()
         var current: Throwable? = error
@@ -33,7 +46,7 @@ object ConnectionDiagnostics {
         error is SSLException ->
             "Secure connection setup failed before pairing. Check that the updated Windows app is running, open Pair new device, and retry. If it repeats, share Diagnostics."
         error is SocketTimeoutException ->
-            "PC did not respond. Check its Wi-Fi IP and allow ClipSync on Private networks."
+            "PC did not respond. Check its Wi-Fi IP and allow FerryClip on Private networks."
         error is EOFException -> "PC disconnected. Tap Reconnect when it is available."
         else -> "Could not connect or apply clipboard text. Check Wi-Fi, the PC app, and Diagnostics, then reconnect."
     }

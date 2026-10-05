@@ -1,13 +1,13 @@
 $ErrorActionPreference = 'Stop'
 
-function Show-Message([string]$text, [string]$title = 'ClipSync Setup', [int]$icon = 64) {
+function Show-Message([string]$text, [string]$title = 'FerryClip Setup', [int]$icon = 64) {
     if ($env:CLIPSYNC_INSTALL_TEST_ROOT) { Write-Host $text; return }
     $shell = New-Object -ComObject WScript.Shell
     [void]$shell.Popup($text, 0, $title, $icon)
 }
 
 try {
-    if (-not [Environment]::Is64BitOperatingSystem) { throw 'ClipSync requires 64-bit Windows.' }
+    if (-not [Environment]::Is64BitOperatingSystem) { throw 'FerryClip requires 64-bit Windows.' }
     $testMode = -not [string]::IsNullOrWhiteSpace($env:CLIPSYNC_INSTALL_TEST_ROOT)
     $installDir = if ($testMode) { [IO.Path]::GetFullPath($env:CLIPSYNC_INSTALL_TEST_ROOT) } else { Join-Path $env:LOCALAPPDATA 'Programs\ClipSync' }
     $payload = Join-Path $PSScriptRoot 'payload.zip'
@@ -25,7 +25,7 @@ try {
             $hasDesktopRuntime = [bool]($runtimeList | Select-String '^Microsoft\.WindowsDesktop\.App 10\.')
         }
         if (-not $hasDesktopRuntime) {
-            Show-Message 'ClipSync Setup will install the official Microsoft .NET 10 Desktop Runtime, then continue.'
+            Show-Message 'FerryClip Setup will install the official Microsoft .NET 10 Desktop Runtime, then continue.'
             $runtimeInstaller = Join-Path $env:TEMP 'windowsdesktop-runtime-10-win-x64.exe'
             Invoke-WebRequest -UseBasicParsing -Uri 'https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe' -OutFile $runtimeInstaller
             $signature = Get-AuthenticodeSignature -LiteralPath $runtimeInstaller
@@ -36,25 +36,25 @@ try {
         }
     }
 
-    if (-not $testMode) { Get-Process -Name ClipSync -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }
+    if (-not $testMode) { Get-Process -Name FerryClip,ClipSync -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }
     $parent = Split-Path -Parent $installDir
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
     $incoming = Join-Path $parent ('ClipSync.installing.' + [Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Force -Path $incoming | Out-Null
     Expand-Archive -LiteralPath $payload -DestinationPath $incoming -Force
-    if (-not (Test-Path -LiteralPath (Join-Path $incoming 'ClipSync.exe'))) { throw 'The ClipSync application payload is invalid.' }
+    if (-not (Test-Path -LiteralPath (Join-Path $incoming 'FerryClip.exe'))) { throw 'The FerryClip application payload is invalid.' }
     if (Test-Path -LiteralPath $installDir) { Remove-Item -LiteralPath $installDir -Recurse -Force }
     Move-Item -LiteralPath $incoming -Destination $installDir
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Uninstall-ClipSync.ps1') -Destination (Join-Path $installDir 'Uninstall-ClipSync.ps1') -Force
-    $exe = Join-Path $installDir 'ClipSync.exe'
+    $exe = Join-Path $installDir 'FerryClip.exe'
 
     if (-not $testMode) {
         $shell = New-Object -ComObject WScript.Shell
         $programs = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-        $shortcut = $shell.CreateShortcut((Join-Path $programs 'ClipSync.lnk'))
+        $shortcut = $shell.CreateShortcut((Join-Path $programs 'FerryClip.lnk'))
         $shortcut.TargetPath = $exe
         $shortcut.WorkingDirectory = $installDir
-        $shortcut.Description = 'Open ClipSync'
+        $shortcut.Description = 'Open FerryClip'
         $shortcut.Save()
 
         $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
@@ -64,22 +64,22 @@ try {
         $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ClipSync'
         New-Item -Path $uninstallKey -Force | Out-Null
         $uninstallCommand = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $installDir 'Uninstall-ClipSync.ps1') + '"'
-        New-ItemProperty -Path $uninstallKey -Name DisplayName -Value 'ClipSync' -PropertyType String -Force | Out-Null
+        New-ItemProperty -Path $uninstallKey -Name DisplayName -Value 'FerryClip' -PropertyType String -Force | Out-Null
         New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '__VERSION__' -PropertyType String -Force | Out-Null
-        New-ItemProperty -Path $uninstallKey -Name Publisher -Value 'ClipSync' -PropertyType String -Force | Out-Null
+        New-ItemProperty -Path $uninstallKey -Name Publisher -Value 'FerryClip' -PropertyType String -Force | Out-Null
         New-ItemProperty -Path $uninstallKey -Name InstallLocation -Value $installDir -PropertyType String -Force | Out-Null
         New-ItemProperty -Path $uninstallKey -Name DisplayIcon -Value $exe -PropertyType String -Force | Out-Null
         New-ItemProperty -Path $uninstallKey -Name UninstallString -Value $uninstallCommand -PropertyType String -Force | Out-Null
         New-ItemProperty -Path $uninstallKey -Name NoModify -Value 1 -PropertyType DWord -Force | Out-Null
         New-ItemProperty -Path $uninstallKey -Name NoRepair -Value 1 -PropertyType DWord -Force | Out-Null
         Start-Process -FilePath $exe -ArgumentList '--show'
-        Show-Message 'ClipSync is installed and running in the system tray. It will start automatically when you sign in.'
+        Show-Message 'FerryClip is installed and running in the system tray. It will start automatically when you sign in.'
     } else {
         Set-Content -LiteralPath (Join-Path $installDir '.installer-smoke-test') -Value 'ok' -Encoding ascii
     }
     exit 0
 }
 catch {
-    Show-Message ("Installation failed: " + $_.Exception.Message) 'ClipSync Setup' 16
+    Show-Message ("Installation failed: " + $_.Exception.Message) 'FerryClip Setup' 16
     exit 1
 }

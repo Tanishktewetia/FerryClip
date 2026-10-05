@@ -59,7 +59,7 @@ object SyncRuntime {
         receiver = ReceiveSession(ClipboardWriter(context.applicationContext)::write)
         sender = ManualSendSession(receiver)
         val devices = com.clipsync.android.store.DevicePolicy.restore(settings.devices())
-        update { it.copy(devices = devices, paused = settings.paused, paired = devices.isNotEmpty(), address = settings.address) }
+        update { it.copy(devices = devices, paused = devices.any { d -> d.isActive } && devices.filter { d -> d.isActive }.all { d -> d.paused }, paired = devices.isNotEmpty(), address = settings.address) }
         initialized = true
     }
     fun resetSession(context: Context) {

@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ClipSync"
+rootProject.name = "FerryClip"
 include(":app")
 include(":core")

@@ -16,7 +16,7 @@ data class PcIdentity(val fingerprint: String, val host: String, val pairingOpen
 
 /** No clipboard frames on these ALPN-isolated sockets. Untrusted metadata is only a discovery hint. */
 class ControlClient(private val context: Context, private val expectedPin: String? = null) {
-    private var stage = "initializing"
+    private var stage = "route_selection"
     @Volatile private var deadlineExpired = false
     @Volatile var observedFingerprint: String? = null
         private set
@@ -29,16 +29,23 @@ class ControlClient(private val context: Context, private val expectedPin: Strin
         val deadline = launch(Dispatchers.Default) { delay(5000); deadlineExpired = true; close() }
         try {
             if (Build.VERSION.SDK_INT < 29) throw ConnectionProblem("Secure sync requires Android 10 or newer with TLS 1.3.")
+            stage = "route_selection"
             val manager = context.getSystemService(ConnectivityManager::class.java)
             @Suppress("DEPRECATION")
-            val wifi = manager.allNetworks.firstOrNull { manager.getNetworkCapabilities(it)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true }
-                ?: throw ConnectionProblem("Join Wi-Fi before searching for a PC.")
+            val route = endpoint.route ?: LocalNetwork.routesForAddress(manager, endpoint.address).firstOrNull()
+                ?: throw ConnectionProblem("Connect both devices to a reachable Wi-Fi, hotspot, Ethernet, or VPN network.")
+            currentCoroutineContext().ensureActive()
+            stage = "socket_create"
+            val tcp = route.createSocket(); own(tcp)
+            stage = "connect"
+            tcp.tcpNoDelay = true
+            tcp.connect(InetSocketAddress(endpoint.address, endpoint.port), if (pairing) 1800 else 650); tcp.soTimeout = 2500
+            currentCoroutineContext().ensureActive()
+            stage = "keystore_identity"
             val identity = KeyStoreIdentity()
             val trust = PinnedTrustManager(expectedPin, pairing || expectedPin == null) { observedFingerprint = it }
+            stage = "tls_context"
             val tls = SSLContext.getInstance("TLS").apply { init(arrayOf(identity), arrayOf(trust), null) }
-            val tcp = wifi.socketFactory.createSocket(); own(tcp)
-            stage = "connect"
-            tcp.connect(InetSocketAddress(endpoint.address, endpoint.port), 4000); tcp.soTimeout = 4000
             val ssl = tls.socketFactory.createSocket(tcp, endpoint.address, endpoint.port, true) as SSLSocket; own(ssl)
             val protocol = if (pairing) "clipsync-pair/1" else "clipsync-probe/1"
             ssl.enabledProtocols = arrayOf("TLSv1.3")
@@ -54,13 +61,13 @@ class ControlClient(private val context: Context, private val expectedPin: Strin
             val arrived = android.os.SystemClock.elapsedRealtime()
             if (pairing) {
                 when (first) {
-                    "PAIR_CLOSED" -> throw ConnectionProblem("Open Pair new device on the PC to restart pairing.")
+                    "PAIR_CLOSED" -> throw ConnectionProblem("Choose Generate code to connect on the PC to restart pairing.")
                     "PAIR_BUSY" -> throw ConnectionProblem("This PC is already confirming another request. Try again after it finishes.")
                 }
-                val code = PairingProtocol.validateOffer(first, identity.fingerprint, remote)
+                PairingProtocol.validateOffer(first, remote)
                 val meta = PairingProtocol.readLine(ssl.inputStream).split('|')
                 require(meta.size == 3 && meta[0] == "META")
-                offer = Offer(code, decodeHost(meta[1]), meta[2].toLong().coerceIn(1, 120000), arrived)
+                offer = Offer(decodeHost(meta[1]), meta[2].toLong().coerceIn(1, 120000), arrived)
             } else {
                 val fields = first.split('|'); require(fields.size == 3 && fields[0] == "INFO")
                 info = PcIdentity(remote, decodeHost(fields[1]), fields[2] == "1")
@@ -69,30 +76,39 @@ class ControlClient(private val context: Context, private val expectedPin: Strin
             stage = "confirmation"
             block(ssl, remote, identity)
         } catch (e: CancellationException) { throw e }
+        catch (e: WrongPairingCodeException) { throw e }
         catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             // Never log exception messages from remote peers or clipboard content.
-            com.clipsync.android.logging.FileLogger.warn("Control connection failed: stage=$stage type=${e.javaClass.simpleName} deadline=$deadlineExpired")
+            if (ConnectionDiagnostics.shouldLogControlFailure(stage, e.javaClass.simpleName, android.os.SystemClock.elapsedRealtime()))
+                com.clipsync.android.logging.FileLogger.warn("Control connection failed: stage=$stage type=${e.javaClass.simpleName} deadline=$deadlineExpired")
             val reason = if (deadlineExpired) java.net.SocketTimeoutException() else e
             throw ConnectionProblem(ControlFailure.message(stage, reason), e)
         } finally { deadline.cancel(); cleanup.cancel(); close() }
     }
-    data class Offer(val code: String, val host: String, val remaining: Long, val arrived: Long)
+    data class Offer(val host: String, val remaining: Long, val arrived: Long)
     private var offer: Offer? = null
     private var info: PcIdentity? = null
     suspend fun probe(endpoint: PcEndpoint): PcIdentity = use(endpoint, false) { _, _, _ -> checkNotNull(info) }
-    suspend fun pair(endpoint: PcEndpoint, confirm: suspend (Offer, suspend (String) -> String) -> Boolean): PcIdentity = use(endpoint, true) { ssl, remote, _ ->
+    suspend fun pair(endpoint: PcEndpoint, code: String): PcIdentity = use(endpoint, true) { ssl, remote, _ ->
+        require(code.matches(Regex("[0-9]{6}"))) { "Enter the six-digit code shown on the PC." }
         val prompt = checkNotNull(offer)
         val expires = launchDeadline(prompt.remaining)
         try {
             ssl.soTimeout = 5000
-            val accepted = confirm(prompt) { code ->
-                require(code.matches(Regex("[0-9]{6}")))
-                withContext(Dispatchers.IO) {
-                    ssl.outputStream.write("CONFIRM|$code\n".toByteArray(Charsets.US_ASCII)); ssl.outputStream.flush()
-                    PairingProtocol.readLine(ssl.inputStream)
+            withContext(Dispatchers.IO) {
+                ssl.outputStream.write(("CONFIRM|" + code + "\n").toByteArray(Charsets.US_ASCII))
+                ssl.outputStream.flush()
+                val reply = PairingProtocol.readLine(ssl.inputStream)
+                when {
+                    reply == "PAIR_TIMEOUT" -> throw java.net.SocketTimeoutException("Pairing code expired")
+                    reply == "PAIR_CLOSED" -> throw ConnectionProblem("Pairing expired. Open a new code on the PC and retry.")
+                    reply == "PAIR_REJECTED" || reply.startsWith("WRONG|") -> throw WrongPairingCodeException()
+                    reply == "PAIR_BUSY" -> throw ConnectionProblem("This PC is confirming another pairing. Try again shortly.")
+                    reply.startsWith("PAIRED|") -> runCatching { val name = (android.os.Build.MODEL ?: "Android phone").take(48); ssl.outputStream.write(("NAME|" + Base64.encodeToString(name.toByteArray(Charsets.UTF_8), Base64.NO_WRAP) + "\n").toByteArray(Charsets.US_ASCII)); ssl.outputStream.flush() }.let { Unit }
+                    else -> throw ConnectionProblem("Unexpected pairing response.")
                 }
             }
-            if (!accepted) throw ConnectionProblem("Pairing cancelled. Open Pair new device on the PC to restart.")
             PcIdentity(remote, prompt.host, false)
         } finally { expires.cancel() }
     }

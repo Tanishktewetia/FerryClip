@@ -27,7 +27,7 @@ internal sealed class MdnsAdvertiser : IDisposable
     {
         _log = log;
         var host = System.Net.Dns.GetHostName().Split('.')[0];
-        _instance = DnsServiceConstructInstance($"ClipSync-{Environment.ProcessId}._clipsync._tcp.local", host + ".local", IntPtr.Zero, IntPtr.Zero, checked((ushort)port), 0, 0, 0, IntPtr.Zero, IntPtr.Zero);
+        _instance = DnsServiceConstructInstance($"FerryClip-{Environment.ProcessId}._clipsync._tcp.local", host + ".local", IntPtr.Zero, IntPtr.Zero, checked((ushort)port), 0, 0, 0, IntPtr.Zero, IntPtr.Zero);
         if (_instance == IntPtr.Zero) throw new InvalidOperationException("DNS-SD instance allocation failed");
         _root = GCHandle.Alloc(this);
         _request = Marshal.AllocHGlobal(Marshal.SizeOf<Request>());

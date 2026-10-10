@@ -24,7 +24,7 @@ android {
             buildConfigField("boolean", "DIAGNOSTICS_ENABLED", "true")
         }
         release {
-            buildConfigField("boolean", "DIAGNOSTICS_ENABLED", providers.gradleProperty("enableDiagnostics").orElse("false").get().toBoolean().toString())
+            buildConfigField("boolean", "DIAGNOSTICS_ENABLED", "false")
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")

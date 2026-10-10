@@ -24,6 +24,8 @@ class ClipboardReadActivity : Activity() {
         super.onCreate(savedInstanceState)
         consumed = savedInstanceState?.getBoolean("consumed") ?: false
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        // This focus-only activity must never start an input session.
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         @Suppress("DEPRECATION")
         overridePendingTransition(0, 0)
         SyncRuntime.initialize(this)

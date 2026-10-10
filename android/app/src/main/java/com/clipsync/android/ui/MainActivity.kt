@@ -46,7 +46,6 @@ class MainActivity : ComponentActivity() {
         val lastCrash = CrashHandler.consumeLastCrash()
         FileLogger.info("FerryClip dashboard/setup opened")
         setContent {
-            var replay by remember { mutableStateOf(settings.replayOnConnect) }
             var step by remember { mutableIntStateOf(settings.onboardingStep.coerceIn(0, 3)) }
             var done by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(settings.onboardingDone) }
             var replayingSetup by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
@@ -54,7 +53,8 @@ class MainActivity : ComponentActivity() {
             val revision = setupRevision
             val notifications = remember(revision) { androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled() }
             val battery = remember(revision) { getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName) }
-            val tile = remember(revision) { settings.tileAdded || settings.tileDismissed }
+            val tile = remember(revision) { settings.tileAdded }
+            val tileDismissed = remember(revision) { settings.tileDismissed }
             FerryClipTheme {
                 pageState.SaveableStateProvider(if(done) "dashboard" else "onboarding") {
                 if (!done) OnboardingScreen(step, notifications, battery, settings.tileAdded,
@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                     exitReplay = if(replayingSetup) ({ done = true; settings.onboardingDone = true; replayingSetup = false }) else null,
                     requestNotifications = ::requestNotifications, requestBattery = ::requestBattery, addTile = ::addSendTile)
                 else MainScreen(state = SyncRuntime.state.collectAsState().value, lastCrash = lastCrash,
-                    notifications = notifications, battery = battery, tile = tile,
+                    notifications = notifications, battery = battery, tile = tile, tileDismissed = tileDismissed,
                     onNotifications = ::requestNotifications, onBattery = ::requestBattery, onTile = ::addSendTile,
                     onDismissTile = { settings.tileDismissed = true; setupRevision++ },
                     onRedo = { replayingSetup = true; step = 0; settings.onboardingStep = 0; done = false; settings.onboardingDone = false },
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onPairCode = { id, code -> SyncRuntime.onPairCode?.invoke(id, code) },
                     onCopyLogs = ::copyLogs, onShareLogs = ::shareLogs, onSaveLogs = ::saveLogs,
-                    replayOnConnect = replay, onReplayChanged = { replay = it; settings.replayOnConnect = it })
+                    )
                 }
             }
         }
@@ -95,21 +95,34 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun addSendTile() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            try {
-                getSystemService(android.app.StatusBarManager::class.java).requestAddTileService(
-                    android.content.ComponentName(this, SendClipboardTileService::class.java), "Send to PC",
-                    android.graphics.drawable.Icon.createWithResource(this, com.clipsync.android.R.drawable.ic_clipsync_status), mainExecutor,
-                ) { result ->
-                    if (result == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED || result == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED) settings.tileAdded = true
-                    setupRevision++
-                }
-            } catch (e: Exception) { FileLogger.warn("Tile add request unavailable: "+e.javaClass.simpleName) }
-        } else {
-            Toast.makeText(this, "Swipe down twice, tap Edit, and add Send to PC.", Toast.LENGTH_LONG).show()
+        if (Build.VERSION.SDK_INT < 33) {
+            Toast.makeText(this, "Open Quick Settings → Edit, then add Send to PC.", Toast.LENGTH_LONG).show()
+            return
         }
-    }
-    private fun requestNotifications() {
+        try {
+            val manager = getSystemService(android.app.StatusBarManager::class.java)
+                ?: error("Quick Settings tile service unavailable")
+            manager.requestAddTileService(
+                android.content.ComponentName(this, SendClipboardTileService::class.java), "Send to PC",
+                android.graphics.drawable.Icon.createWithResource(this, com.clipsync.android.R.drawable.ic_clipsync_status), mainExecutor,
+            ) { result ->
+                when (result) {
+                    android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED,
+                    android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> {
+                        settings.tileAdded = true
+                        Toast.makeText(this, "Send to PC is ready in Quick Settings.", Toast.LENGTH_SHORT).show()
+                    }
+                    android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED ->
+                        Toast.makeText(this, "Tile not added. You can add it from Quick Settings → Edit.", Toast.LENGTH_LONG).show()
+                    else -> Toast.makeText(this, "Quick Settings did not add the tile.", Toast.LENGTH_LONG).show()
+                }
+                setupRevision++
+            }
+        } catch (e: Exception) {
+            FileLogger.warn("Tile add request unavailable: " + e.javaClass.simpleName)
+            Toast.makeText(this, "Open Quick Settings → Edit, then add Send to PC.", Toast.LENGTH_LONG).show()
+        }
+    }    private fun requestNotifications() {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED && !settings.notificationRequested) {
             settings.notificationRequested = true
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -120,11 +133,16 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun requestBattery() {
-        if (getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)) return
-        runCatching { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) }
-            .onFailure { runCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) } }
-    }
-    private fun pair(code: String, replacement: String?) { command(ClipboardWatchService.ACTION_PAIR, replacement, code) }
+        val power = getSystemService(PowerManager::class.java)
+        val destination = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && power.isIgnoringBatteryOptimizations(packageName)) {
+            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        } else {
+            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))
+        }
+        runCatching { startActivity(destination) }
+            .onFailure { runCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+                .onFailure { Toast.makeText(this, "Open FerryClip app settings to review background battery use.", Toast.LENGTH_LONG).show() } }
+    }    private fun pair(code: String, replacement: String?) { command(ClipboardWatchService.ACTION_PAIR, replacement, code) }
     private fun command(action: String, deviceId: String? = null, code: String = "") {
         ClipboardReadStore.setServiceEnabled(true)
         try {
@@ -173,7 +191,7 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             uri?.let { runCatching { contentResolver.delete(it, null, null) } }
             FileLogger.warn("Diagnostics save failed: ${e.javaClass.simpleName}")
-            Toast.makeText(this, "Could not save. Use Share logs instead.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Could not save the diagnostics file.", Toast.LENGTH_LONG).show()
         }
     }
     private fun exportLogs(uri: Uri) {

@@ -12,7 +12,7 @@ if (-not (Test-Path $gradlew)) {
 Write-Host "Building FerryClip Android beta APK..." -ForegroundColor Cyan
 Push-Location $androidDir
 try {
-    & .\gradlew.bat assembleRelease -PenableDiagnostics=true
+    & .\gradlew.bat assembleRelease
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Android build failed with exit code $LASTEXITCODE"
         exit $LASTEXITCODE

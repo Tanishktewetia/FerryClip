@@ -61,4 +61,17 @@ TestResults/
 /scripts/verify-windows-installer.ps1
 /site/verify-downloads.cjs
 /site/verify-motion.cjs
-!/RULES.md
+
+# Local agent instructions are not public project documentation
+/[Rr][Uu][Ll][Ee].md
+/[Rr][Uu][Ll][Ee][Ss].md
+
+# Machine-local caches, environment secrets and scratch exports
+.kotlin/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+Pasted text*.txt
+notes.txt

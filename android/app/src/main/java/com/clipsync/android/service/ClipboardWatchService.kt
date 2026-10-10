@@ -86,8 +86,8 @@ class ClipboardWatchService : Service() {
         pairingController = PairingController(applicationContext, settings, scope, ::saveDevices, ::connectPairedDevice)
         notifications = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notifications.createNotificationChannel(NotificationChannel(CHANNEL, "FerryClip status", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Quiet connection status and manual clipboard sending"; setSound(null, null); enableVibration(false)
+            notifications.createNotificationChannel(NotificationChannel(CHANNEL, "FerryClip connection", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Quiet FerryClip connection status and manual clipboard sending"; setSound(null, null); enableVibration(false); setShowBadge(false)
             })
         }
         startForeground(NOTIFICATION_ID, notification(SyncRuntime.state.value))
@@ -403,21 +403,43 @@ class ClipboardWatchService : Service() {
     private fun notification(state: SyncUiState): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val send = PendingIntent.getActivity(this, 2205, ClipboardReadActivity.createIntent(this, "notification"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val action = NotificationCompat.Action.Builder(com.clipsync.android.R.drawable.ic_clipsync_status, "Send clipboard now", send).setAuthenticationRequired(true).build()
-        val count = state.devices.count { it.connectionState in setOf(DeviceState.Connected, DeviceState.Paused) }
-        val builder = NotificationCompat.Builder(this, CHANNEL).setSmallIcon(com.clipsync.android.R.drawable.ic_clipsync_status).setColor(0xFF14C8D2.toInt())
-            .setContentTitle("FerryClip · " + state.status).setContentText(when {
-                state.pairing != null -> "Enter the PC code in FerryClip to pair"
-                state.paused -> "All active PC sessions are paused"
-                state.pendingUnlock -> "PC clipboard waiting for unlock"
-                state.sendFeedback != null -> state.sendFeedback
-                state.connected -> "Connected to " + count + " PC(s) on your local network"
-                else -> "Waiting for your PCs on the local network"
-            }).setContentIntent(open).setOngoing(true).setSilent(true).setOnlyAlertOnce(true).setPriority(NotificationCompat.PRIORITY_LOW).setCategory(NotificationCompat.CATEGORY_SERVICE)
-        if (state.connected && !state.paused) builder.addAction(action)
+        val activeCount = state.devices.count { it.connectionState == DeviceState.Connected }
+        val connected = state.connected && activeCount > 0
+        val status = when {
+            state.pairing != null -> "Enter the PC code to pair"
+            state.paused -> "Sync paused"
+            state.pendingUnlock -> "PC copy waiting for unlock"
+            connected -> "Connected to $activeCount ${if (activeCount == 1) "PC" else "PCs"}"
+            state.sendFeedback != null -> state.sendFeedback
+            else -> "Waiting for a PC"
+        }
+        val builder = NotificationCompat.Builder(this, CHANNEL)
+            .setSmallIcon(com.clipsync.android.R.drawable.ic_clipsync_status)
+            .setColor(if (connected) 0xFF14C8D2.toInt() else 0xFF607D8B.toInt())
+            .setContentTitle("FerryClip")
+            .setContentText(status)
+            .setContentIntent(open)
+            .setOngoing(true)
+            .setSilent(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+        if (connected && !state.paused) {
+            val compact = android.widget.RemoteViews(packageName, com.clipsync.android.R.layout.notification_sync)
+            compact.setTextViewText(com.clipsync.android.R.id.notification_status, status)
+            compact.setOnClickPendingIntent(com.clipsync.android.R.id.notification_send, send)
+            compact.setContentDescription(com.clipsync.android.R.id.notification_send,
+                "Send clipboard to $activeCount ${if (activeCount == 1) "PC" else "PCs"}")
+            builder.setCustomContentView(compact)
+                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            builder.addAction(NotificationCompat.Action.Builder(
+                com.clipsync.android.R.drawable.ic_notification_send,
+                "Send clipboard",
+                send,
+            ).setAuthenticationRequired(true).build())
+        }
         return builder.build()
     }
-
     companion object {
         const val ACTION_FORGET = "com.clipsync.android.FORGET"
         const val ACTION_CONNECT = "com.clipsync.android.CONNECT"
@@ -426,7 +448,7 @@ class ClipboardWatchService : Service() {
         const val ACTION_PAIR = "com.clipsync.android.PAIR"
         const val ACTION_PAUSE = "com.clipsync.android.PAUSE"
         const val ACTION_RECOVER = "com.clipsync.android.RECOVER"
-        private const val CHANNEL = "ferryclip_status"
+        private const val CHANNEL = "ferryclip_status_v3"
         private const val NOTIFICATION_ID = 2201
     }
 }

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FerryClip</string>
+    <string name="notification_send">Send</string>
+    <string name="notification_send_description">Send clipboard to PC</string>
 </resources>

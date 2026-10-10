@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,13 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,17 +41,31 @@ import com.clipsync.android.store.*
 import java.text.DateFormat
 import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, battery: Boolean, tile: Boolean,
+fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, battery: Boolean, tile: Boolean, tileDismissed: Boolean,
     onNotifications: () -> Unit, onBattery: () -> Unit, onTile: () -> Unit, onDismissTile: () -> Unit,
     onRedo: () -> Unit, onConnect: (String) -> Unit, onDisconnect: (String) -> Unit, onPair: (String, String?) -> Unit, onCancelPair: () -> Unit,
     onPause: (String, Boolean) -> Unit, onForget: (String) -> Unit, onRename: (String, String) -> Unit,
     onPairCode: (Long, String?) -> Unit, onCopyLogs: () -> Unit, onShareLogs: () -> Unit, onSaveLogs: () -> Unit,
-    replayOnConnect: Boolean, onReplayChanged: (Boolean) -> Unit) {
+    ) {
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
-    var codeBounds by remember { mutableStateOf(Rect.Zero) }
+    var codeFocused by remember { mutableStateOf(false) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val imeInsets = WindowInsets.ime
+    // Android consumes Back to dismiss the IME before Compose's BackHandler.
+    // Observe the actual visible -> hidden edge, not focus changes or a stale flag.
+    LaunchedEffect(imeInsets, density) {
+        var wasVisible = imeInsets.getBottom(density) > 0
+        snapshotFlow { imeInsets.getBottom(density) > 0 }.collect { visible ->
+            if (wasVisible && !visible && codeFocused) {
+                focusManager.clearFocus(force = true)
+                codeFocused = false
+            }
+            wasVisible = visible
+        }
+    }
     var help by rememberSaveable { mutableStateOf(false) }
     var settings by rememberSaveable { mutableStateOf(false) }
     var helpFromAbout by rememberSaveable { mutableStateOf(false) }
@@ -67,10 +76,11 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
     var crash by rememberSaveable { mutableStateOf(lastCrash != null) }
     val pageState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     if (help) { HelpScreen(onBack = { help = false; if(helpFromAbout) { about = true; helpFromAbout = false } }, onAddTile = onTile); return }
-    if (about) { AboutScreen(onBack = { about = false }, onHelp = { about = false; helpFromAbout = true; help = true }); return }
+    if (about) { AboutScreen(onBack = { about = false }, onHelp = { about = false; helpFromAbout = true; help = true }, diagnosticsEnabled = BuildConfig.DIAGNOSTICS_ENABLED); return }
+    BackHandler(enabled = codeFocused) { keyboard?.hide(); focusManager.clearFocus(); codeFocused = false }
     BackHandler(enabled = settings) { settings = false }
     pageState.SaveableStateProvider(if(settings) "settings" else "devices") {
-    Scaffold(modifier = Modifier.pointerInput(codeBounds) { awaitEachGesture { val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial); if (!codeBounds.contains(down.position)) { focusManager.clearFocus(); keyboard?.hide() } } }, containerColor = MaterialTheme.colorScheme.background, topBar = {
+    Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(Modifier.statusBarsPadding().fillMaxWidth().padding(horizontal = 20.dp)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 60.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -80,8 +90,8 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
                         Spacer(Modifier.width(12.dp))
                     }
                     Text(if (settings) "Settings" else "FerryClip", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { help = true }) { Icon(Icons.AutoMirrored.Outlined.HelpOutline, "Help", tint = MaterialTheme.colorScheme.onSurface) }
-                    IconButton(onClick = { settings = !settings }) {
+                    IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); help = true }) { Icon(Icons.AutoMirrored.Outlined.HelpOutline, "Help", tint = MaterialTheme.colorScheme.onSurface) }
+                    IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); settings = !settings }) {
                         Icon(if (settings) Icons.Outlined.Close else Icons.Outlined.Settings,
                             if (settings) "Back to devices" else "Settings", tint = MaterialTheme.colorScheme.onSurface)
                     }
@@ -98,23 +108,21 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
             }
         }
     }, bottomBar = {
-        if (!settings) Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface) {
-            Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 10.dp)) {
-                Text("PC → phone automatically · Phone → PC with one tap", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = { help = true }, contentPadding = PaddingValues(0.dp)) { Text("How FerryClip works") }
-            }
+        if (settings) Surface(color = MaterialTheme.colorScheme.background) {
+            Text("FerryClip ${BuildConfig.VERSION_NAME} · Your clipboard stays on your local network",
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            .padding(horizontal = if (settings) 16.dp else 20.dp, vertical = if (settings) 12.dp else 24.dp), verticalArrangement = Arrangement.spacedBy(if (settings) 12.dp else 20.dp)) {
             if (settings) {
                 SettingsPanel(
-                    version = BuildConfig.VERSION_NAME,
                     notifications = notifications,
                     battery = battery,
                     tile = tile,
-                    replayOnConnect = replayOnConnect,
                     diagnosticsEnabled = BuildConfig.DIAGNOSTICS_ENABLED,
                     onNotifications = onNotifications,
                     onBattery = onBattery,
@@ -122,19 +130,18 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
                     onRedo = onRedo,
                     onHelp = { help = true },
                     onAbout = { about = true },
-                    onReplayChanged = onReplayChanged,
                     onCopyLogs = onCopyLogs,
                     onShareLogs = onShareLogs,
                     onSaveLogs = onSaveLogs,
                 )
             } else {
 
-                if (!notifications || !battery || !tile) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                if (!notifications || !battery || (!tile && !tileDismissed)) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Finish your setup", style = MaterialTheme.typography.titleMedium)
                         if (!notifications) OutlinedButton(onClick = onNotifications, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Icon(Icons.Outlined.NotificationsNone, null); Spacer(Modifier.width(8.dp)); Text("Enable notifications") }
                         if (!battery) OutlinedButton(onClick = onBattery, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Icon(Icons.Outlined.BatterySaver, null); Spacer(Modifier.width(8.dp)); Text("Allow background battery use") }
-                        if (!tile) { OutlinedButton(onClick = { guide = !guide }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Icon(Icons.Outlined.GridView, null); Spacer(Modifier.width(8.dp)); Text("Send to PC tile setup") }
+                        if (!tile && !tileDismissed) { OutlinedButton(onClick = { guide = !guide }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Icon(Icons.Outlined.GridView, null); Spacer(Modifier.width(8.dp)); Text("Send to PC tile setup") }
                             TextButton(onClick = onDismissTile) { Text("Dismiss tile reminder", textDecoration = TextDecoration.Underline) } }
                         AnimatedVisibility(guide && !tile) { TileGuide(onTile) }
                     }
@@ -147,10 +154,15 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
                 var sendNote by remember { mutableStateOf<String?>(null) }
                 LaunchedEffect(state.sendFeedback) { sendNote = state.sendFeedback; kotlinx.coroutines.delay(5000); sendNote = null }
                 sendNote?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                AddDevice(state, onPair, onCancelPair, replacementId, { replacementId = it }, { codeBounds = it })
+                AddDevice(state, onPair, onCancelPair, replacementId, { replacementId = it }, { codeFocused = it })
 
             }
-            Spacer(Modifier.height(24.dp))
+            if (!settings) Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text("PC → phone automatically · Phone → PC with one tap", modifier = Modifier.padding(top = 12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { help = true }, contentPadding = PaddingValues(0.dp)) { Text("How FerryClip works") }
+            }
+            Spacer(Modifier.height(12.dp))
         }
         }
     }
@@ -215,16 +227,31 @@ private fun DeviceTile(device: PairedDevice, network: String, connect: (String) 
         }
     }
 }@Composable
-private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cancel: () -> Unit, replacementId: String?, onReplacement: (String?) -> Unit, onCodeBounds: (Rect) -> Unit) {
+private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cancel: () -> Unit, replacementId: String?, onReplacement: (String?) -> Unit, onCodeFocus: (Boolean) -> Unit) {
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     var code by rememberSaveable { mutableStateOf("") }
+    var devicesAtPairStart by remember { mutableStateOf<List<PairedDevice>?>(null) }
+    var pairSearchStarted by remember { mutableStateOf(false) }
+    LaunchedEffect(state.searching, state.pairingMessage, state.devices) {
+        val baseline = devicesAtPairStart
+        if (baseline != null && state.devices != baseline) { code = ""; devicesAtPairStart = null; pairSearchStarted = false }
+        if (state.searching) pairSearchStarted = true
+        else if (baseline != null && pairSearchStarted) {
+            if (state.pairingMessage == null) code = ""
+            devicesAtPairStart = null
+            pairSearchStarted = false
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(if (replacementId == null) { if (state.devices.isEmpty()) "Connect your first PC" else "Add a PC" } else "Replace PC pairing", style = MaterialTheme.typography.headlineSmall)
             Text("On Windows, choose Generate code to connect. Enter the six digits here.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        OutlinedTextField(code, { code = it.filter(Char::isDigit).take(6) }, label = { Text("Code from your PC") }, placeholder = { Text("123456") }, singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), modifier = Modifier.fillMaxWidth().onGloballyPositioned { onCodeBounds(it.boundsInRoot()) }, enabled = !state.searching, textStyle = MaterialTheme.typography.headlineSmall)
-        Button(onClick = { pair(code, replacementId) }, enabled = code.length == 6 && !state.searching, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+        OutlinedTextField(code, { code = it.filter { digit -> digit in '0'..'9' }.take(6) }, label = { Text("Code from your PC") }, placeholder = { Text("123456") }, singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { keyboard?.hide(); focusManager.clearFocus() }), modifier = Modifier.fillMaxWidth().onFocusChanged { onCodeFocus(it.isFocused) }, enabled = !state.searching, textStyle = MaterialTheme.typography.headlineSmall)
+        Button(onClick = { keyboard?.hide(); focusManager.clearFocus(); devicesAtPairStart = state.devices; pairSearchStarted = false; pair(code, replacementId) }, enabled = code.length == 6 && !state.searching, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
             Text(if (state.searching) "Connecting on your local network…" else if (replacementId == null) "Pair this PC" else "Replace pairing")
         }
         if (replacementId != null) TextButton(onClick = { onReplacement(null) }) { Text("Cancel replacement") }

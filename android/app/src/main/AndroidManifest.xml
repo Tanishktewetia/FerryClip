@@ -25,6 +25,7 @@
 
         <activity
             android:name=".ui.ClipboardReadActivity"
+            android:windowSoftInputMode="stateAlwaysHidden"
             android:excludeFromRecents="true"
             android:exported="false"
             android:noHistory="true"
@@ -34,6 +35,7 @@
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustResize"
             android:theme="@style/Theme.FerryClip">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,8 +1,10 @@
 package com.clipsync.android.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
@@ -12,72 +14,98 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun OnboardingScreen(step: Int, notifications: Boolean, battery: Boolean, tile: Boolean,
-    advance: (Int) -> Unit, finish: () -> Unit, requestNotifications: () -> Unit, requestBattery: () -> Unit, addTile: () -> Unit, exitReplay: (() -> Unit)? = null) {
+fun OnboardingScreen(
+    step: Int,
+    notifications: Boolean,
+    battery: Boolean,
+    tile: Boolean,
+    advance: (Int) -> Unit,
+    finish: () -> Unit,
+    requestNotifications: () -> Unit,
+    requestBattery: () -> Unit,
+    addTile: () -> Unit,
+    exitReplay: (() -> Unit)? = null,
+) {
     val page = step.coerceIn(0, 3)
-    val titles = listOf("Copy on your PC. Paste on your phone.", "Pair once with a connection code", "Keep sharing in the background", "Send from anywhere")
-    val descriptions = listOf(
-        "FerryClip shares plain text between your Windows PC and Android phone over the same Wi-Fi, hotspot, or local VPN. No account, cloud, or internet connection is needed.",
-        "Join the same Wi-Fi, or connect your PC to your phone hotspot. On Windows, select Generate code to connect. Enter the six digits in FerryClip on your phone.",
-        "Android can limit apps when the screen is off. Allowing background battery use helps FerryClip keep receiving PC copies and recover its connection.",
-        "Send to PC is a Quick Settings tile. Add it once, then copy text in any app and tap the tile to send it to your active PC.")
-    val complete = when(page) { 2 -> notifications && battery; 3 -> tile; else -> true }
-    BackHandler(enabled = page > 0 || exitReplay != null) { if(page > 0) advance(page - 1) else exitReplay?.invoke() }
-    Scaffold(containerColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground,
+    val complete = when (page) { 2 -> notifications && battery; 3 -> tile; else -> true }
+    BackHandler(enabled = page > 0 || exitReplay != null) {
+        if (page > 0) advance(page - 1) else exitReplay?.invoke()
+    }
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface) {
-                Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Button(onClick = { if (page == 3) finish() else advance(page + 1) }, shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(if (page == 3) "Open dashboard" else "Continue") }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                Column(
+                    Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Button(
+                        onClick = { if (page == 3) finish() else advance(page + 1) },
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    ) { Text(if (page == 3) "Open dashboard" else "Continue") }
+                    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         if (page > 0) TextButton(onClick = { advance(page - 1) }) { Text("Back") } else Spacer(Modifier.width(1.dp))
                         if (page > 0 && !complete) TextButton(onClick = { if (page == 3) finish() else advance(page + 1) }) { Text("Skip for now") }
                     }
                 }
             }
-        }) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-            Column(Modifier.widthIn(max = 560.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                BrandHeader("Android + Windows · local sharing")
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Set up FerryClip", style = MaterialTheme.typography.titleSmall)
+        },
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).widthIn(max = 560.dp).verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            BrandHeader("Android + Windows")
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Set up FerryClip", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text("${page + 1} of 4", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { repeat(4) { index -> Surface(modifier = Modifier.weight(1f).height(4.dp), shape = MaterialTheme.shapes.small, color = if(index <= page) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant) { } } }
-                SetupIllustration(page)
-                Text(titles[page], style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground)
-                Text(descriptions[page], style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
-                when(page) {
-                    0 -> {
-                        SetupExplanation("PC → phone", "Automatic. Copy on Windows, then paste on your phone.")
-                        SetupExplanation("Phone → PC", "Copy text, then tap the notification action or Send to PC tile.")
-                        Text("No account. No cloud. Your clipboard travels only over your local connection.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    1 -> {
-                        SetupExplanation("1. Same network", "Use shared Wi-Fi or a hotspot in either direction.")
-                        SetupExplanation("2. Generate on Windows", "Open the tray panel and select Generate code to connect.")
-                        SetupExplanation("3. Enter on Android", "Type the code on the dashboard. Cancel anytime to try a new code.")
-                    }
-                    2 -> {
-                        SetupExplanation("Notifications", "Connection status and a one-tap Send clipboard action.")
-                        OutlinedButton(onClick = requestNotifications, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if(notifications) "Review notification settings" else "Allow notifications") }
-                        SetupExplanation("Background activity", "Reduce Android battery restrictions so the connection can recover while the screen is off.")
-                        OutlinedButton(onClick = requestBattery, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if(battery) "Background activity allowed" else "Allow background activity") }
-                        Text("Both are optional and can be changed later in Settings.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    3 -> {
-                        TileInstructions()
-                        if(tile) SetupComplete("Send to PC tile is added")
-                        else Button(onClick = addTile, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = MaterialTheme.shapes.medium) { Text("Add Send to PC tile") }
-                        Text("If Android cannot open the add-tile prompt, follow the steps above. You can skip this and use the notification instead.",
-                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    repeat(4) { index ->
+                        Box(Modifier.weight(1f).height(4.dp).background(if (index <= page) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape))
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+            }
+            SetupIllustration(page, notifications, battery, tile, addTile)
+            when (page) {
+                0 -> {
+                    IntroBlock("Your clipboard, in sync", "Copy on Windows and paste on Android. Send text back with one tap.")
+                    DirectionRow(Icons.Outlined.LaptopWindows, "PC → phone", "Copy on Windows. Paste on your phone.")
+                    DirectionRow(Icons.AutoMirrored.Outlined.Send, "Phone → PC", "Copy on Android, then tap Send to PC.")
+                    Text("Works over the same Wi-Fi, hotspot, or local VPN.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                1 -> {
+                    IntroBlock("Pair your PC", "Use a temporary six-digit code. No account needed.")
+                    SetupStep(1, "Same network", "Connect both devices to Wi-Fi or a hotspot.")
+                    SetupStep(2, "Generate a code", "On Windows, choose Generate code to connect.")
+                    SetupStep(3, "Enter it here", "Type the code in FerryClip on Android.")
+                }
+                2 -> {
+                    IntroBlock("Stay connected", "Allow background activity so PC copies can arrive while your screen is off.")
+                    PermissionRow(Icons.Outlined.NotificationsNone, "Notifications", "Connection status and one-tap Send", notifications,
+                        if (notifications) "Allowed" else "Allow", requestNotifications)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    PermissionRow(Icons.Outlined.BatterySaver, "Background activity", "Helps sync recover while the screen is off", battery,
+                        if (battery) "Allowed" else "Allow", requestBattery)
+                    Text("Both are optional and can be changed later in Settings.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                3 -> {
+                    IntroBlock("Send from any app", "Add Send to PC to Quick Settings, then tap it after copying text.")
+                    SetupStep(1, "Open Quick Settings", "Swipe down twice from the top of your screen.")
+                    SetupStep(2, "Edit tiles", "Tap the pencil or Edit button.")
+                    SetupStep(3, "Add Send to PC", "Drag the tile into your active shortcuts.")
+                    SetupStep(4, "Finish", "Tap Done or Back to save.")
+                    TileStatus(tile, addTile)
+                    Text("The notification’s Send to PC action is another one-tap option.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
@@ -85,78 +113,150 @@ fun OnboardingScreen(step: Int, notifications: Boolean, battery: Boolean, tile: 
 
 @Composable
 fun BrandHeader(subtitle: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
-            Icon(Icons.Outlined.ContentCopy, null, Modifier.padding(12.dp).size(28.dp))
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Surface(Modifier.size(44.dp), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+            Icon(Icons.Outlined.ContentCopy, null, Modifier.padding(10.dp))
         }
-        Column { Text("FerryClip", style = MaterialTheme.typography.titleLarge)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-    }
-}
-@Composable
-private fun SetupExplanation(title: String, body: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-        Text(body, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-@Composable
-private fun SetupComplete(label: String) {
-    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Outlined.Info, null); Text(label, style = MaterialTheme.typography.titleSmall)
+        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text("FerryClip", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
+
 @Composable
-private fun SetupIllustration(page: Int) {
+private fun IntroBlock(title: String, description: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(description, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun DirectionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, detail: String) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun SetupStep(number: Int, title: String, detail: String) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(Modifier.size(28.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+            Box(contentAlignment = Alignment.Center) { Text(number.toString(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold) }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun PermissionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    detail: String,
+    enabled: Boolean,
+    action: String,
+    onClick: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, null, tint = if (enabled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (enabled) Text(action, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+        else OutlinedButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 12.dp), modifier = Modifier.heightIn(min = 40.dp)) { Text(action) }
+    }
+}
+
+@Composable
+private fun TileStatus(added: Boolean, onAdd: () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(if (added) Icons.Outlined.CheckCircle else Icons.Outlined.Add, null, tint = if (added) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
+            Text(if (added) "Send to PC is added" else "Quick Settings tile", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            if (!added) TextButton(onClick = onAdd) { Text("Add") }
+        }
+    }
+}
+
+@Composable
+private fun SetupIllustration(page: Int, notifications: Boolean, battery: Boolean, tile: Boolean, onAddTile: () -> Unit) {
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurface) {
-        Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            when(page) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            when (page) {
                 0 -> {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
-                        Icon(Icons.Outlined.LaptopWindows, "Windows PC", Modifier.size(56.dp))
-                        Icon(Icons.Outlined.Sync, "Clipboard shared over Wi-Fi", Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
-                        Icon(Icons.Outlined.PhoneAndroid, "Android phone", Modifier.size(48.dp))
+                        DeviceGlyph(Icons.Outlined.LaptopWindows, "Windows")
+                        Icon(Icons.Outlined.SyncAlt, "Clipboard sync", Modifier.size(26.dp), tint = MaterialTheme.colorScheme.primary)
+                        DeviceGlyph(Icons.Outlined.PhoneAndroid, "Android")
                     }
-                    Text("One local connection. Two places to paste.", style = MaterialTheme.typography.bodyMedium)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Text("COPY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("PASTE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
                 1 -> {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Icon(Icons.Outlined.LaptopWindows, null); Text("Windows", style = MaterialTheme.typography.labelLarge); Icon(Icons.Outlined.PhoneAndroid, null) }
-                    Text("123 456", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
-                    Text("Generate on PC → enter on phone", style = MaterialTheme.typography.bodyMedium)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Icon(Icons.Outlined.LaptopWindows, "Windows", Modifier.size(26.dp))
+                        Text("PAIR CODE", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Outlined.PhoneAndroid, "Android", Modifier.size(26.dp))
+                    }
+                    Text("— — —   — — —", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Text("Example only · use the live code from Windows", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 2 -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.BatteryChargingFull, null, Modifier.size(52.dp))
-                        Column { Text("Screen off", style = MaterialTheme.typography.titleSmall); Text("Connection stays ready", style = MaterialTheme.typography.bodyMedium) }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Outlined.BatteryChargingFull, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
+                        Column {
+                            Text("Screen off", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text("Your connection stays ready", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
-                    Text("Receive PC copies while FerryClip is in the background.", style = MaterialTheme.typography.bodyMedium)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Text("${if (notifications) "✓" else "○"} Notifications     ${if (battery) "✓" else "○"} Background activity", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 3 -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) { Icon(Icons.Outlined.Wifi, "Wi-Fi"); Icon(Icons.Outlined.Bluetooth, "Bluetooth"); Icon(Icons.Outlined.Edit, "Edit tiles") }
-                    HorizontalDivider()
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.AutoMirrored.Outlined.Send, null); Text("Send to PC", style = MaterialTheme.typography.titleSmall) }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Surface(Modifier.size(44.dp), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+                            Icon(Icons.AutoMirrored.Outlined.Send, null, Modifier.padding(10.dp))
+                        }
+                        Column {
+                            Text("Send to PC", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text(if (tile) "Ready in Quick Settings" else "Add once · send with one tap", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        if (!tile) IconButton(onClick = onAddTile) { Icon(Icons.Outlined.Add, "Add tile") }
+                    }
                 }
             }
         }
     }
 }
+
 @Composable
-private fun TileInstructions() {
-    listOf("Swipe down twice to open Quick Settings.", "Tap the pencil or Edit button.", "Drag Send to PC into the active tiles.", "Tap Done or Back to save.").forEachIndexed { index, instruction ->
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("${index + 1}.", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            Text(instruction, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-        }
+private fun DeviceGlyph(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(icon, label, Modifier.size(38.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
+
 @Composable
 fun TileGuide(addTile: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Add a shortcut next to Wi-Fi", style = MaterialTheme.typography.titleMedium)
-        SetupIllustration(3)
-        TileInstructions()
-        Button(onClick = addTile, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = MaterialTheme.shapes.medium) { Text("Add Send to PC tile") }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Add Send to PC", style = MaterialTheme.typography.titleMedium)
+        SetupIllustration(3, notifications = false, battery = false, tile = false, onAddTile = addTile)
+        listOf("Open Quick Settings", "Tap the pencil or Edit", "Add Send to PC", "Tap Done or Back").forEachIndexed { index, instruction -> SetupStep(index + 1, instruction, "") }
+        Button(onClick = addTile, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("Add Send to PC tile") }
     }
 }

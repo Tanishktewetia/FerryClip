@@ -4,8 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -51,14 +52,13 @@ fun HelpScreen(onBack: () -> Unit, onAddTile: () -> Unit) {
                 "After restarting the phone, unlock it once. Enabled sync resumes; a force-stop in Android Settings requires opening the app again.",
                 "Discovery checks your PC hotspot, saved address, and local network. Recovery backs off up to 30 seconds; no need to re-pair after an IP change.",
                 "Only the newest known text is kept in memory. If offline, tap Send to PC to hold that phone text for reconnect. Text is not retained after the process exits. Conflicts use a logical counter and device ID, not your wall clock.",
-                "Turn off Apply latest text on reconnect in Settings to preserve the phone clipboard on reconnect. Pause stops both directions while keeping the connection alive. Switching PCs requires an explicit Connect action; Forget requires confirmation. Only the previously active PC reconnects automatically."))
+                "When a PC reconnects, the newest shared text is restored. Pause stops both directions while keeping the connection alive. Switching PCs requires an explicit Connect action; Forget requires confirmation. Only the previously active PC reconnects automatically."))
             GuideSection("05", "Something not connecting?", listOf(
                 "Keep both devices on the same private Wi-Fi. Guest networks, VPN routing, or client isolation can block local connections.",
                 "Keep both devices on the same Wi-Fi or hotspot. Allow FerryClip on the active Windows firewall profile; phone hotspots may be Public. Generate a fresh connection code on Windows, then enter it here.",
                 "A certificate mismatch needs your attention. Never approve an unexpected pairing code. Pair again explicitly if you intentionally replaced a device.",
-                "Open Settings → Diagnostics → Share logs. Include the app versions and what action failed. Logs exclude clipboard text; do not paste secrets into an issue."))
-            OutlinedButton(onClick = { links.openUri(PROJECT_URL) }, modifier = Modifier.fillMaxWidth()) { Text("Source code & documentation on GitHub") }
-            TextButton(onClick = { links.openUri("$PROJECT_URL/issues") }, modifier = Modifier.fillMaxWidth()) { Text("Report an issue") }
+                "Report an issue using the link below. Include the app versions and what action failed; never paste private clipboard text or secrets."))
+            TextButton(onClick = { links.openUri("$PROJECT_URL/issues") }, modifier = Modifier.fillMaxWidth()) { Text("Report an issue"); Spacer(Modifier.width(6.dp)); Icon(Icons.AutoMirrored.Outlined.OpenInNew, "Opens externally") }
             Text("Local-network text sync · No account · No cloud clipboard history", style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(12.dp))
         }

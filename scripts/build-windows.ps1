@@ -7,7 +7,7 @@ if (-not (Test-Path -LiteralPath $project)) { throw "Project not found at $proje
 if (-not (Test-Path -LiteralPath $dist)) { New-Item -ItemType Directory -Path $dist | Out-Null }
 $version = ([xml](Get-Content -LiteralPath $project -Raw)).Project.PropertyGroup.Version | Select-Object -First 1
 if ([string]::IsNullOrWhiteSpace($version)) { throw 'Windows project version is missing.' }
-$publish = Join-Path $dist ("windows-singlefile-$version")
+$publish = Join-Path $root ("windows\ClipSync.Windows\obj\ferryclip-singlefile-$version")
 $target = Join-Path $dist 'FerryClip-win-x64.exe'
 
 Write-Host "Publishing self-contained FerryClip $version (win-x64) ..." -ForegroundColor Cyan

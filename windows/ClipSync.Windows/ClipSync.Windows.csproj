@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>0.8.9.0</Version>
+    <Version>0.8.11.0</Version>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -10,6 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>FerryClip</AssemblyName>
     <RootNamespace>ClipSync.Windows</RootNamespace>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>

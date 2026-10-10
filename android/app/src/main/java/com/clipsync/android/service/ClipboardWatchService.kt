@@ -348,7 +348,7 @@ class ClipboardWatchService : Service() {
             ManualSendResult.PAUSED -> "All connected PCs are paused."
             ManualSendResult.DISCONNECTED -> "Connect a PC before sending."
             ManualSendResult.EMPTY -> "No text to send."
-            ManualSendResult.TOO_LARGE -> "Not sent: text exceeds the 1 MiB limit."
+            ManualSendResult.TOO_LARGE -> "Not sent: text exceeds the 16 MiB transport limit."
         }) }
         return result
     }

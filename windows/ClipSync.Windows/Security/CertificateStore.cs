@@ -34,6 +34,18 @@ public sealed class CertificateStore : IDisposable
     public string PhoneName { get => Peers.FirstOrDefault()?.Name ?? "Paired phone"; set { if(PinnedPeer is {} fp) RenamePeer(fp,value); else throw new InvalidOperationException("No paired phone"); } }
     public void ForgetPeer() { lock(_peerGate) { SavePeers(Array.Empty<Peer>()); File.Delete(PinnedPeerPath); File.Delete(Path.Combine(_dir,"phone-name.txt")); } }
     public void Pin(string fp) { if(fp.Length!=64 || !fp.All(Uri.IsHexDigit)) throw new ArgumentException("Invalid certificate fingerprint"); lock(_peerGate) { var peers=Peers.ToList(); if(!peers.Any(p=>p.Fingerprint.Equals(fp,StringComparison.OrdinalIgnoreCase))) peers.Add(new Peer(fp.ToUpperInvariant(),"Paired phone")); SavePeers(peers); } }
+    public void PinReplacing(string fp, string? replacement) {
+        if (replacement is null) { Pin(fp); return; }
+        if (fp.Length != 64 || !fp.All(Uri.IsHexDigit)) throw new ArgumentException("Invalid certificate fingerprint");
+        lock (_peerGate) {
+            var peers = Peers.ToList();
+            var old = peers.FirstOrDefault(p => p.Fingerprint.Equals(replacement, StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException("Selected phone is no longer paired");
+            peers.RemoveAll(p => p.Fingerprint.Equals(replacement, StringComparison.OrdinalIgnoreCase) || p.Fingerprint.Equals(fp, StringComparison.OrdinalIgnoreCase));
+            peers.Add(old with { Fingerprint = fp.ToUpperInvariant() });
+            SavePeers(peers);
+        }
+    }
     public static string PairCode(string a,string b)=> (BitConverter.ToUInt32(SHA256.HashData(Encoding.UTF8.GetBytes(string.CompareOrdinal(a,b)<0?a+b:b+a)),0)%1000000).ToString("D6");
     public void Dispose()=>Certificate.Dispose();
 }

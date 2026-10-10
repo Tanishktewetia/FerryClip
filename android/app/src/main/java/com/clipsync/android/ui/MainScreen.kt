@@ -43,7 +43,7 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, battery: Boolean, tile: Boolean, tileDismissed: Boolean,
+fun MainScreen(state: SyncUiState, lastCrash: String?, onDismissCrash: () -> Unit, notifications: Boolean, battery: Boolean, tile: Boolean, tileDismissed: Boolean,
     onNotifications: () -> Unit, onBattery: () -> Unit, onTile: () -> Unit, onDismissTile: () -> Unit,
     onRedo: () -> Unit, onConnect: (String) -> Unit, onDisconnect: (String) -> Unit, onPair: (String, String?) -> Unit, onCancelPair: () -> Unit,
     onPause: (String, Boolean) -> Unit, onForget: (String) -> Unit, onRename: (String, String) -> Unit,
@@ -66,6 +66,8 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
             wasVisible = visible
         }
     }
+    var history by rememberSaveable { mutableStateOf(false) }
+    if (history) { HistoryScreen(onBack = { history = false }); return }
     var help by rememberSaveable { mutableStateOf(false) }
     var settings by rememberSaveable { mutableStateOf(false) }
     var helpFromAbout by rememberSaveable { mutableStateOf(false) }
@@ -73,7 +75,7 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
     var guide by rememberSaveable { mutableStateOf(false) }
     var forgetId by rememberSaveable { mutableStateOf<String?>(null) }
     var replacementId by rememberSaveable { mutableStateOf<String?>(null) }
-    var crash by rememberSaveable { mutableStateOf(lastCrash != null) }
+    val crash = lastCrash != null
     val pageState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     if (help) { HelpScreen(onBack = { help = false; if(helpFromAbout) { about = true; helpFromAbout = false } }, onAddTile = onTile); return }
     if (about) { AboutScreen(onBack = { about = false }, onHelp = { about = false; helpFromAbout = true; help = true }, diagnosticsEnabled = BuildConfig.DIAGNOSTICS_ENABLED); return }
@@ -91,6 +93,7 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
                     }
                     Text(if (settings) "Settings" else "FerryClip", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); help = true }) { Icon(Icons.AutoMirrored.Outlined.HelpOutline, "Help", tint = MaterialTheme.colorScheme.onSurface) }
+                    if (!settings) IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); history = true }) { Icon(Icons.Outlined.History, "Clipboard history") }
                     IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); settings = !settings }) {
                         Icon(if (settings) Icons.Outlined.Close else Icons.Outlined.Settings,
                             if (settings) "Back to devices" else "Settings", tint = MaterialTheme.colorScheme.onSurface)
@@ -173,9 +176,10 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, notifications: Boolean, b
             confirmButton = { TextButton(onClick = { onForget(id); forgetId = null }) { Text("Forget", color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { forgetId = null }) { Text("Cancel") } })
     } }
-    if (crash) AlertDialog(onDismissRequest = { crash = false }, title = { Text("Previous session ended unexpectedly") },
-        text = { Text(if (BuildConfig.DIAGNOSTICS_ENABLED) "Share the Diagnostics logs from Settings so we can investigate." else "FerryClip can be reopened from your app list. Your paired devices remain saved.") },
-        confirmButton = { TextButton(onClick = { crash = false; if (BuildConfig.DIAGNOSTICS_ENABLED) settings = true }) { Text(if (BuildConfig.DIAGNOSTICS_ENABLED) "Open Diagnostics" else "OK") } })
+    if (crash) AlertDialog(onDismissRequest = { onDismissCrash() }, title = { Text("Previous session ended unexpectedly") },
+        text = { Text("A previous session crashed. Your paired devices remain saved. Share the crash report so the cause can be checked.") },
+        dismissButton = { TextButton(onClick = { onDismissCrash(); onShareLogs() }) { Text("Share crash report") } },
+        confirmButton = { TextButton(onClick = { onDismissCrash(); if (BuildConfig.DIAGNOSTICS_ENABLED) settings = true }) { Text(if (BuildConfig.DIAGNOSTICS_ENABLED) "Open Diagnostics" else "OK") } })
 }
 
 @Composable

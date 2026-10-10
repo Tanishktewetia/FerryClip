@@ -43,17 +43,19 @@ class ClipboardReadActivity : Activity() {
             if (getSystemService(KeyguardManager::class.java).isKeyguardLocked) {
                 feedback("Unlock the phone before sending clipboard text."); return
             }
-            val state = SyncRuntime.state.value
-            if (state.paused) { feedback("Not sent: syncing is paused."); return }
-            if (!state.paired || SyncRuntime.onManualSend == null) {
-                feedback("Not sent: wait for Connected, then tap Send again."); return
-            }
+
             val clip = getSystemService(ClipboardManager::class.java).primaryClip
             // Text only. Do not dereference a content URI, Intent, HTML conversion or another app's provider.
             val text = if (clip != null && clip.itemCount > 0) clip.getItemAt(0).text?.toString() else null
             if (text.isNullOrEmpty()) { feedback("No plain text on the clipboard."); return }
             val sensitiveKey = if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE"
             val sensitive = clip?.description?.extras?.getBoolean(sensitiveKey, false) == true
+            com.clipsync.android.history.ClipboardHistory.get(this).record(text, "From phone", sensitive)
+            val state = SyncRuntime.state.value
+            if (state.paused) { feedback("Not sent: syncing is paused."); return }
+            if (!state.paired || SyncRuntime.onManualSend == null) {
+                feedback("Not sent: wait for Connected, then tap Send again."); return
+            }
             val result = SyncRuntime.onManualSend?.invoke(text, sensitive)
             if (result == ManualSendResult.QUEUED) ClipboardReadStore.recordRead(this, text)
         } catch (e: Exception) {

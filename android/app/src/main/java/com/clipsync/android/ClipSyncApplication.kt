@@ -9,6 +9,7 @@ class ClipSyncApplication : Application() {
         super.onCreate()
         FileLogger.init(this)
         CrashHandler.init(this)
+        com.clipsync.android.history.ClipboardHistory.get(this)
         FileLogger.info("FerryClip v${BuildConfig.VERSION_NAME} starting")
     }
 }

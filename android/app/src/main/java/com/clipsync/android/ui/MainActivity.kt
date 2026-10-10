@@ -20,6 +20,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.clipsync.android.clipboard.ClipboardReadStore
 import com.clipsync.android.logging.CrashHandler
@@ -30,8 +33,27 @@ import com.clipsync.android.service.SyncRuntime
 import com.clipsync.android.store.SyncSettings
 import com.clipsync.android.ui.theme.FerryClipTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : androidx.fragment.app.FragmentActivity() {
+    private var activityResumed by mutableStateOf(false)
+    private var authenticated by mutableStateOf(false)
+    private var authenticating = false
+    private var authenticationMessage by mutableStateOf<String?>(null)
+    private var previousCrashReport: String? = null
     private lateinit var settings: SyncSettings
+    fun changeAppLock(enabled: Boolean) {
+        AppAuthentication.authenticate(this, success = {
+            authenticated = true
+            com.clipsync.android.history.ClipboardHistory.get(this).update { it.copy(appLock = enabled) }
+        }, failure = { Toast.makeText(this, it, Toast.LENGTH_LONG).show() })
+    }
+    private fun unlock() {
+        if (authenticating) return
+        authenticating = true
+        AppAuthentication.authenticate(this, success = {
+            authenticated = true; authenticating = false; authenticationMessage = null
+            captureFocusedClipboard()
+        }, failure = { authenticating = false; authenticationMessage = it })
+    }
     private var setupRevision by mutableIntStateOf(0)
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { setupRevision++ }
     private val saveDocument = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
@@ -40,12 +62,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         settings = SyncSettings(this)
         ClipboardReadStore.initialize(this)
         SyncRuntime.initialize(this)
         val lastCrash = CrashHandler.consumeLastCrash()
+        previousCrashReport = lastCrash
+        lastCrash?.let { FileLogger.warn("Previous crash acknowledged; details available in diagnostics.") }
         FileLogger.info("FerryClip dashboard/setup opened")
         setContent {
+            var pendingCrash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(lastCrash) }
             var step by remember { mutableIntStateOf(settings.onboardingStep.coerceIn(0, 3)) }
             var done by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(settings.onboardingDone) }
             var replayingSetup by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
@@ -55,14 +81,41 @@ class MainActivity : ComponentActivity() {
             val battery = remember(revision) { getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName) }
             val tile = remember(revision) { settings.tileAdded }
             val tileDismissed = remember(revision) { settings.tileDismissed }
+            val history = remember { com.clipsync.android.history.ClipboardHistory.get(this) }
+            val historyOptions by history.options.collectAsState()
+            LaunchedEffect(historyOptions?.enabled, activityResumed, authenticated) { captureFocusedClipboard() }
+            val historyError by history.error.collectAsState()
+            val locked = historyOptions == null || (historyOptions?.appLock == true && !authenticated)
+            LaunchedEffect(historyOptions?.appLock, authenticated, activityResumed) {
+                if (activityResumed && historyOptions?.appLock == true && !authenticated) unlock()
+            }
             FerryClipTheme {
+                if (locked) {
+                    androidx.compose.material3.Surface(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+                        androidx.compose.foundation.layout.Column(
+                            modifier = androidx.compose.ui.Modifier.padding(24.dp),
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                        ) {
+                            androidx.compose.material3.Text(if (historyOptions == null) "Opening FerryClip" else "FerryClip is locked")
+                            historyError?.let { message ->
+                                androidx.compose.material3.Text(message)
+                                androidx.compose.material3.Button(onClick = { history.refresh() }) { androidx.compose.material3.Text("Retry") }
+                            }
+                            authenticationMessage?.let { androidx.compose.material3.Text(it) }
+                            if (historyOptions != null) androidx.compose.material3.Button(onClick = ::unlock) { androidx.compose.material3.Text("Unlock") }
+                            else androidx.compose.material3.CircularProgressIndicator()
+                        }
+                    }
+                    return@FerryClipTheme
+                }
                 pageState.SaveableStateProvider(if(done) "dashboard" else "onboarding") {
                 if (!done) OnboardingScreen(step, notifications, battery, settings.tileAdded,
                     advance = { step = it; settings.onboardingStep = it },
                     finish = { done = true; settings.onboardingDone = true; replayingSetup = false },
                     exitReplay = if(replayingSetup) ({ done = true; settings.onboardingDone = true; replayingSetup = false }) else null,
                     requestNotifications = ::requestNotifications, requestBattery = ::requestBattery, addTile = ::addSendTile)
-                else MainScreen(state = SyncRuntime.state.collectAsState().value, lastCrash = lastCrash,
+                else MainScreen(state = SyncRuntime.state.collectAsState().value, lastCrash = pendingCrash, onDismissCrash = { pendingCrash = null },
                     notifications = notifications, battery = battery, tile = tile, tileDismissed = tileDismissed,
                     onNotifications = ::requestNotifications, onBattery = ::requestBattery, onTile = ::addSendTile,
                     onDismissTile = { settings.tileDismissed = true; setupRevision++ },
@@ -87,8 +140,36 @@ class MainActivity : ComponentActivity() {
                 .onFailure { SyncRuntime.update { state -> state.copy(error = "Tap Reconnect to restart the background connection.") } }
         }
     }
+    private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener { captureFocusedClipboard() }
+    private fun captureFocusedClipboard() {
+        if (!activityResumed || !hasWindowFocus()) return
+        val options = com.clipsync.android.history.ClipboardHistory.get(this).options.value ?: return
+        if (!options.enabled || (options.appLock && !authenticated)) return
+        runCatching {
+            val clip = getSystemService(ClipboardManager::class.java).primaryClip ?: return
+            val text = if (clip.itemCount > 0) clip.getItemAt(0).text?.toString() else null
+            if (text.isNullOrEmpty()) return
+            com.clipsync.android.history.ClipboardHistory.get(this).record(
+                text, "From phone", clip.description.extras?.getBoolean("android.content.extra.IS_SENSITIVE", false) == true)
+        }.onFailure { FileLogger.warn("Focused clipboard capture failed: " + it.javaClass.simpleName) }
+    }
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) captureFocusedClipboard()
+    }
+    override fun onPause() {
+        getSystemService(ClipboardManager::class.java).removePrimaryClipChangedListener(clipboardListener)
+        activityResumed = false
+        super.onPause()
+    }
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) authenticated = false
+    }
     override fun onResume() {
         super.onResume()
+        activityResumed = true
+        getSystemService(ClipboardManager::class.java).addPrimaryClipChangedListener(clipboardListener)
         setupRevision++
         if (::settings.isInitialized && SyncRuntime.state.value.running) {
             startService(Intent(this, ClipboardWatchService::class.java).setAction(ClipboardWatchService.ACTION_RECOVER))
@@ -171,7 +252,10 @@ class MainActivity : ComponentActivity() {
     private fun shareLogs() {
         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, "FerryClip Diagnostics")
-            putExtra(Intent.EXTRA_TEXT, FileLogger.getRecentLogs())
+            putExtra(Intent.EXTRA_TEXT, buildString {
+                previousCrashReport?.let { appendLine(it); appendLine() }
+                append(FileLogger.getRecentLogs())
+            })
         }, "Share FerryClip diagnostics"))
     }
     private fun saveLogs() {

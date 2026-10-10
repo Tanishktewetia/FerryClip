@@ -41,6 +41,7 @@ public sealed class SyncServer : IDisposable
     private readonly TimeSpan _heartbeatInterval;
     private DateTime _pairUntil;
     private string? _pairCode;
+    private string? _replacementPeer;
     private int _pairAttempts;
     private long _pairGeneration;
     private bool _pairRestartRequired;
@@ -94,11 +95,11 @@ public sealed class SyncServer : IDisposable
         if (_advertise) { Advertise(); _lanAnnouncement = new LanAnnouncement(ListeningPort); }
         _info($"mTLS sync server listening on Wi-Fi/LAN port {ListeningPort}");
     }
-    public void BeginPairing()
+    public void BeginPairing(string? replacementPeer = null)
     {
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
         long generation;
-        lock (_gate) { _pairUntil = DateTime.UtcNow.Add(_pairingDuration); _pairCode = code; _pairAttempts = 0; generation = ++_pairGeneration; _pairRestartRequired = false; }
+        lock (_gate) { if (replacementPeer is not null && _store.FindPeer(replacementPeer) is null) throw new InvalidOperationException("Phone is no longer paired"); _replacementPeer = replacementPeer; _pairUntil = DateTime.UtcNow.Add(_pairingDuration); _pairCode = code; _pairAttempts = 0; generation = ++_pairGeneration; _pairRestartRequired = false; }
         _info("Explicit one-time pairing code opened");
         PairingCodeAvailable?.Invoke(code);
         _ = Task.Run(async () => { try { await Task.Delay(_pairingDuration, _stop.Token); lock (_gate) { if (generation != _pairGeneration || _pairUntil == DateTime.MinValue) return; _pairUntil = DateTime.MinValue; _pairCode = null; } Notice?.Invoke("Pairing timed out. Generate code to connect for a new code."); } catch (OperationCanceledException) { } });
@@ -314,7 +315,10 @@ public sealed class SyncServer : IDisposable
                 lock (_gate) {
                     if (epoch!=_peerEpochs.GetValueOrDefault(peer) || trustGeneration != _trustGeneration || DateTime.UtcNow >= deadline || generation != _pairGeneration || !string.Equals(_pairCode, code, StringComparison.Ordinal)) return;
 
-                    _store.Pin(peer); _pairUntil = DateTime.MinValue; _pairCode = null; _pairRestartRequired = false;
+                    var replacement = _replacementPeer;
+                    _store.PinReplacing(peer, replacement);
+                    if (replacement is not null && !replacement.Equals(peer, StringComparison.OrdinalIgnoreCase)) RevokePhone(replacement);
+                    _replacementPeer = null; _pairUntil = DateTime.MinValue; _pairCode = null; _pairRestartRequired = false;
                 }
                 await WriteLineAsync(ssl, $"PAIRED|{host}", timeout.Token);
                 try {

@@ -16,6 +16,7 @@ public partial class StatusWindow : Window
 {
     public Action<string,bool>? PhoneEnabledRequested { get; set; }
     public Action<string,bool>? PhonePausedRequested { get; set; }
+    public Action<string>? PhoneReplaceRequested { get; set; }
     public Action<string>? PhoneForgetRequested { get; set; }
     public Action<string,string>? PhoneRenameRequested { get; set; }
     private readonly Dictionary<string,System.Windows.Controls.Expander> _phoneTiles = new();
@@ -51,6 +52,13 @@ public partial class StatusWindow : Window
         Button("Disconnect",()=>PhoneEnabledRequested?.Invoke(id,!_phoneStates[id].Enabled),"PrimaryButtonStyle");
         Button("Ⅱ Pause",()=>PhonePausedRequested?.Invoke(id,!_phoneStates[id].Paused),"ActionButtonStyle");
         Button("Forget device",()=> { _suppressDeactivation=true; try{if(System.Windows.MessageBox.Show(this,"Forget this phone? Other phones remain paired.","Forget phone",MessageBoxButton.YesNo,MessageBoxImage.Warning,MessageBoxResult.No)==MessageBoxResult.Yes) PhoneForgetRequested?.Invoke(id);}finally{_suppressDeactivation=false;} },"ActionButtonStyle");
+        Button("Re-pair / replace this phone",()=> {
+            _suppressDeactivation=true;
+            try {
+                if(System.Windows.MessageBox.Show(this,"Generate a code to replace this phone's saved identity? Enter it on the same phone after reinstalling FerryClip. The old identity is removed only after successful pairing.","Re-pair phone",MessageBoxButton.YesNo,MessageBoxImage.Question,MessageBoxResult.No)==MessageBoxResult.Yes)
+                    PhoneReplaceRequested?.Invoke(id);
+            } finally { _suppressDeactivation=false; }
+        },"ActionButtonStyle");
         tile.Content=body; tile.Expanded+=(_,_)=> { CollapseOtherTiles(tile,PhoneTiles); SetPhones(_phoneStates.Values.ToList()); }; tile.Collapsed+=(_,_)=>SetPhones(_phoneStates.Values.ToList()); return tile;
     }
     private readonly Action _pair;

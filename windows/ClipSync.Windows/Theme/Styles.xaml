@@ -104,4 +104,82 @@
         </Setter>
     </Style>
 
+    <Style x:Key="TrayMenuStyle" TargetType="ContextMenu">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="HasDropShadow" Value="True"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="#F1F3F5"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ContextMenu">
+            <Border Background="#1E242C" BorderBrush="#39414C" BorderThickness="1" CornerRadius="10" Padding="6,8" MinWidth="204">
+                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+            </Border>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="TrayMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Padding" Value="14,0"/><Setter Property="Height" Value="40"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="MenuItem">
+            <Border x:Name="ItemBorder" CornerRadius="6" Background="Transparent" Padding="{TemplateBinding Padding}">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition/></Grid.ColumnDefinitions><ContentPresenter ContentSource="Icon" VerticalAlignment="Center"/><ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" HorizontalAlignment="Left" VerticalAlignment="Center"/></Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+                                <MultiDataTrigger><MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Value="Pointer"/>
+                </MultiDataTrigger.Conditions><Setter TargetName="ItemBorder" Property="Background" Value="#343E4B"/></MultiDataTrigger>
+                <MultiDataTrigger><MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsHighlighted, RelativeSource={RelativeSource Self}}" Value="True"/>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Value="Keyboard"/>
+                </MultiDataTrigger.Conditions><Setter TargetName="ItemBorder" Property="Background" Value="#343E4B"/></MultiDataTrigger>
+                <MultiDataTrigger><MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Destructive"/>
+                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Value="Pointer"/>
+                </MultiDataTrigger.Conditions><Setter TargetName="ItemBorder" Property="Background" Value="#422C31"/><Setter Property="Foreground" Value="#F0A4AC"/></MultiDataTrigger>
+                <MultiDataTrigger><MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Destructive"/>
+                    <Condition Binding="{Binding IsHighlighted, RelativeSource={RelativeSource Self}}" Value="True"/>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Value="Keyboard"/>
+                </MultiDataTrigger.Conditions><Setter TargetName="ItemBorder" Property="Background" Value="#422C31"/><Setter Property="Foreground" Value="#F0A4AC"/></MultiDataTrigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="DeviceExpanderStyle" TargetType="Expander">
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Expander">
+            <StackPanel>
+                <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" HorizontalContentAlignment="Stretch" Foreground="{TemplateBinding Foreground}">
+                    <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border x:Name="HeaderBorder" CornerRadius="6" Background="Transparent" Padding="0,4"><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="HeaderBorder" Property="Background" Value="#30363F"/></Trigger></ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template>
+                    <ContentPresenter ContentSource="Header"/>
+                </ToggleButton>
+                <ContentPresenter x:Name="Body" ContentSource="Content" Visibility="Collapsed"/>
+            </StackPanel>
+            <ControlTemplate.Triggers><Trigger Property="IsExpanded" Value="True"><Setter TargetName="Body" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="HistoryActionStyle" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="Padding" Value="8,5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+            <Border x:Name="ActionSurface" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ActionSurface" Property="Background" Value="#303B48"/><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/></Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ActionSurface" Property="Background" Value="#303B48"/><Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/></Trigger>
+                <MultiTrigger><MultiTrigger.Conditions><Condition Property="Tag" Value="Destructive"/><Condition Property="IsMouseOver" Value="True"/></MultiTrigger.Conditions><Setter TargetName="ActionSurface" Property="Background" Value="#422C31"/><Setter Property="Foreground" Value="#F0A4AC"/></MultiTrigger>
+                <MultiTrigger><MultiTrigger.Conditions><Condition Property="Tag" Value="Destructive"/><Condition Property="IsKeyboardFocused" Value="True"/></MultiTrigger.Conditions><Setter TargetName="ActionSurface" Property="Background" Value="#422C31"/><Setter Property="Foreground" Value="#F0A4AC"/></MultiTrigger>
+                <Trigger Property="IsPressed" Value="True"><Setter TargetName="ActionSurface" Property="Opacity" Value="0.7"/></Trigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <DataTemplate x:Key="DashboardMenuHeader">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="{Binding}"/><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8A7;" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel>
+    </DataTemplate>
+ <Style TargetType="Separator"><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Separator"><Border Height="1" Background="#2F343B" Margin="8,6"/></ControlTemplate></Setter.Value></Setter></Style>
 </ResourceDictionary>

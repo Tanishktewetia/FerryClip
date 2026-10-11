@@ -1,0 +1,9 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <SolidColorBrush x:Key="Base" Color="#15181C"/><SolidColorBrush x:Key="Surface" Color="#1A1D21"/><SolidColorBrush x:Key="Raised" Color="#2A2F36"/>
+ <SolidColorBrush x:Key="CardSurface" Color="#23272D"/><SolidColorBrush x:Key="Text" Color="#F2F4F7"/><SolidColorBrush x:Key="Muted" Color="#B3FFFFFF"/><SolidColorBrush x:Key="Line" Color="#2F343B"/>
+ <SolidColorBrush x:Key="Accent" Color="#9EC5FF"/><SolidColorBrush x:Key="Danger" Color="#FF8A8A"/>
+ <SolidColorBrush x:Key="Connected" Color="#3DDC97"/><SolidColorBrush x:Key="Paused" Color="#F5B74A"/>
+ <SolidColorBrush x:Key="AccentText" Color="#0B2A52"/><CornerRadius x:Key="CardRadius">12</CornerRadius><Thickness x:Key="CardPadding">20</Thickness>
+ <BooleanToVisibilityConverter x:Key="BoolVisibility"/>
+ <Style x:Key="KeyboardFocus"><Setter Property="Control.Template"><Setter.Value><ControlTemplate><Border BorderBrush="{StaticResource Accent}" BorderThickness="2" CornerRadius="6" Margin="-3"/></ControlTemplate></Setter.Value></Setter></Style>
+</ResourceDictionary>

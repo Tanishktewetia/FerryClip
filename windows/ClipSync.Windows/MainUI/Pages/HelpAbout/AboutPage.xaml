@@ -1,0 +1,22 @@
+<UserControl x:Class="ClipSync.Windows.MainUI.Pages.HelpAbout.AboutPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="Transparent">
+ <UserControl.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/FerryClip;component/MainUI/Theme/Controls.xaml"/></ResourceDictionary.MergedDictionaries><Style x:Key="SecondaryLink" TargetType="Button" BasedOn="{StaticResource MainButton}"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="{StaticResource Accent}"/><Setter Property="Foreground" Value="{StaticResource Accent}"/></Style>  </ResourceDictionary>
+ </UserControl.Resources>
+ <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid MinHeight="420">
+  <Border Style="{StaticResource Card}" MaxWidth="680" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="22" Margin="0,12">
+   <StackPanel HorizontalAlignment="Center" MaxWidth="560">
+    <Image Source="/FerryClip;component/Assets/ferryclip_logo.png" Width="64" Height="64" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center"/>
+    <TextBlock Text="FerryClip" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,2"/>
+    <TextBlock Text="{Binding VersionLabel}" FontSize="13" Foreground="{StaticResource Muted}" HorizontalAlignment="Center"/>
+    <TextBlock Text="{Binding Tagline}" FontSize="14" Foreground="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,14"/>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,14"><Button Content="Website" Command="{Binding WebsiteCommand}" Style="{StaticResource SecondaryLink}" Margin="0,0,8,0"/><Button Content="GitHub" Command="{Binding GitHubCommand}" Style="{StaticResource SecondaryLink}" Margin="0,0,8,0"/><Button Content="Release notes" Command="{Binding ReleasesCommand}" Style="{StaticResource SecondaryLink}"/></StackPanel>
+    <Border Height="1" Background="{StaticResource Line}" Margin="0,0,0,18"/>
+    <ItemsControl ItemsSource="{Binding Features}"><ItemsControl.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal" Margin="0,0,0,6"><Ellipse Width="7" Height="7" Fill="{StaticResource Connected}" VerticalAlignment="Center" Margin="2,0,12,0"/><TextBlock Text="{Binding}" FontSize="14" TextWrapping="Wrap"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+    <TextBlock Text="{Binding LicenseText}" FontSize="13" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,8,0,2"/>
+    
+    <TextBlock Text="{Binding CopyrightText}" FontSize="12" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
+   </StackPanel>
+  </Border>
+ </Grid></ScrollViewer>
+</UserControl>

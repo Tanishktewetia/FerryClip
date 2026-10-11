@@ -1,0 +1,49 @@
+<UserControl x:Class="ClipSync.Windows.MainUI.Pages.HelpAbout.HelpPage"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="Transparent">
+ <UserControl.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/FerryClip;component/MainUI/Theme/Controls.xaml"/></ResourceDictionary.MergedDictionaries>
+  <Style x:Key="DocumentationCard" TargetType="Button" BasedOn="{StaticResource MainButton}">
+   <Setter Property="Background" Value="{StaticResource CardSurface}"/><Setter Property="BorderBrush" Value="{StaticResource Line}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="0"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Stretch"/><Setter Property="MinHeight" Value="90"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+    <Border x:Name="CardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource CardRadius}" Padding="16"><ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/></Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CardBorder" Property="Background" Value="{StaticResource Raised}"/><Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource Accent}"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="CardBorder" Property="Opacity" Value="0.82"/></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource Accent}"/><Setter TargetName="CardBorder" Property="BorderThickness" Value="2"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="CardBorder" Property="Opacity" Value="0.5"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="SecondaryLink" TargetType="Button" BasedOn="{StaticResource MainButton}"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="{StaticResource Accent}"/><Setter Property="Foreground" Value="{StaticResource Accent}"/></Style>
+   </ResourceDictionary>
+ </UserControl.Resources>
+ <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+  <StackPanel>
+   <ItemsControl ItemsSource="{Binding Resources}">
+    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate><DataTemplate>
+     <Button Style="{StaticResource DocumentationCard}" Command="{Binding OpenCommand}" AutomationProperties.Name="{Binding Title}" Width="230" Margin="0,6,4,0" ToolTip="{Binding Title}">
+      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/></Grid.ColumnDefinitions>
+       <Path Data="{Binding Icon}" Width="24" Height="24" Stretch="Uniform" Stroke="{StaticResource Accent}" StrokeThickness="1.6" Fill="Transparent" VerticalAlignment="Top" Margin="0,2,0,0"/>
+       <StackPanel Grid.Column="1" Margin="10,0,6,0" VerticalAlignment="Center"><TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="{Binding Description}" FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel>
+       <Path Grid.Column="2" Data="M5,3 L11,9 L5,15" Width="10" Height="14" Stretch="Uniform" Stroke="{StaticResource Muted}" StrokeThickness="1.6" VerticalAlignment="Center"/>
+      </Grid>
+     </Button>
+    </DataTemplate></ItemsControl.ItemTemplate>
+   </ItemsControl>
+   <Border Style="{StaticResource Card}" Margin="0,12,0,0" Padding="12"><StackPanel>
+    <TextBlock Text="Having trouble connecting?" FontSize="18" FontWeight="SemiBold"/>
+    <TextBlock Text="Try these three checks to get back in sync." Foreground="{StaticResource Muted}" FontSize="13" Margin="0,4,0,10"/>
+    <ItemsControl ItemsSource="{Binding TroubleshootingSteps}">
+     <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+     <ItemsControl.ItemTemplate><DataTemplate><Grid Margin="0,0,12,0"><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <Border Width="24" Height="24" CornerRadius="12" Background="{StaticResource Accent}" VerticalAlignment="Top"><TextBlock Text="{Binding Number}" Foreground="{StaticResource Base}" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+      <StackPanel Grid.Column="1"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap"/><TextBlock Text="{Binding Description}" Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,4,4,0"/></StackPanel>
+     </Grid></DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+   </StackPanel></Border>
+   <StackPanel Orientation="Horizontal" Margin="0,12,0,4"><Button Content="Visit ferryclip.app" Command="{Binding WebsiteCommand}" Style="{StaticResource SecondaryLink}" Margin="0,0,10,0"/><Button Content="GitHub repository" Command="{Binding GitHubCommand}" Style="{StaticResource SecondaryLink}"/></StackPanel>
+  </StackPanel>
+ </ScrollViewer>
+</UserControl>

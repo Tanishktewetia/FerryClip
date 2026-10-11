@@ -68,6 +68,7 @@ public sealed class SyncServer : IDisposable
     public event Action<bool>? ConnectionChanged;
     public event Action<string>? PairingCodeAvailable;
     public event Action<string>? Notice;
+    public DateTimeOffset? PairingExpiresAt { get { lock (_gate) return _pairCode is null ? null : new DateTimeOffset(_pairUntil, TimeSpan.Zero); } }
     public bool PairingOpen { get { lock (_gate) return _pairCode is not null && DateTime.UtcNow < _pairUntil; } }
     public string Status { get; private set; } = "Waiting";
     public string Fingerprint => _store.Fingerprint;

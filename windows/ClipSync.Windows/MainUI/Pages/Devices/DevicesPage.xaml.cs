@@ -28,6 +28,11 @@ public partial class DevicesPage : System.Windows.Controls.UserControl, IDisposa
         var box = (System.Windows.Controls.TextBox)sender;
         box.IsVisibleChanged += RenameVisible;
     }
+    void RenameLostFocus(object sender, System.Windows.Input.KeyboardFocusChangedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.TextBox box && box.DataContext is DeviceCardViewModel card && card.IsEditing)
+            card.SaveRenameCommand.Execute(null);
+    }
     void RenameVisible(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (e.NewValue is true) { var box = (System.Windows.Controls.TextBox)sender; box.Dispatcher.BeginInvoke(new Action(() => { box.Focus(); box.SelectAll(); })); }

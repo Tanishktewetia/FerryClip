@@ -13,7 +13,8 @@ public sealed class HistoryRowViewModel : ObservableObject
  public string PinLabel=>pinned?"Unpin":"Pin";
  public string RevealLabel=>revealed?"Hide":"Reveal";
  public string Preview=>entry.Sensitive&&!revealed?"••••••••":entry.Text.Replace('\r',' ').Replace('\n',' ');
- public string Metadata=>$"{(entry.Direction=="Received"?"From phone":"From PC")} · {entry.At.LocalDateTime:g}";
+ public string Metadata=>$"{(entry.Direction=="Received"?"From phone":"From PC")} · {TimeFormatter.Format(entry.At)}";
+ public string FullTime=>TimeFormatter.Full(entry.At);
  public ICommand CopyCommand{get;}public ICommand PinCommand{get;}public ICommand DeleteCommand{get;}public ICommand RevealCommand{get;}
 }
 public sealed class PairingViewModel : ObservableObject, IDisposable

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows.Input;
+using System.Windows;
 using System.Windows.Threading;
 using ClipSync.Windows.MainUI.Infrastructure;
 using ClipSync.Windows.MainUI.Models;
@@ -19,6 +20,8 @@ public sealed class DashboardViewModel : ObservableObject, IDisposable
         Status = new StatusCardViewModel(shell.App);
         Pairing = new PairingViewModel(shell.App);
         ViewHistoryCommand = new RelayCommand(() => shell.Navigate("History"));
+        OpenDevicesCommand = new RelayCommand(() => shell.Navigate("Devices"));
+        TurnOnHistoryCommand = new RelayCommand(() => { try { shell.App.UpdateSettings(shell.App.Settings with { History = shell.App.Settings.Policy with { Save = true } }); } catch (Exception ex) { shell.App.Report(ex); } });
         OpenSettingsCommand = new RelayCommand(() => shell.Navigate("Settings"));
         shell.App.PropertyChanged += Changed;
         Refresh();
@@ -41,6 +44,8 @@ public sealed class DashboardViewModel : ObservableObject, IDisposable
     public bool HistoryOff => !shell.App.Settings.Policy.Save;
     public ICommand ViewHistoryCommand { get; }
     public ICommand OpenSettingsCommand { get; }
+    public ICommand OpenDevicesCommand { get; }
+    public ICommand TurnOnHistoryCommand { get; }
 
     private void Changed(object? sender, PropertyChangedEventArgs e)
     {
@@ -107,13 +112,14 @@ public sealed class DashboardDeviceViewModel : ObservableObject
         : shell.App.IsPaused ? "Paused"
         : "Connected";
     public string StatusResource => !device.Connected
-        ? "Unreachable"
+        ? "Danger"
         : !device.SyncEnabled || shell.App.IsPaused ? "Paused"
         : "Connected";
-    public string LastSeen => device.Last is { } last
-        ? $"{Math.Max(0,(int)(DateTimeOffset.Now-last).TotalMinutes)} min ago"
-        : device.Since is { } since ? $"Connected since {since.LocalDateTime:t}" : "On your local network";
+    public string LastSeen => TimeFormatter.Format(device.Last ?? device.Since);
+    public string FullTime => TimeFormatter.Full(device.Last ?? device.Since);
     public string SyncAutomationName => $"Enable or pause sync for {Name}";
+    public ICommand OpenCommand => new RelayCommand(() => shell.Navigate("Devices"));
+    public System.Windows.Media.Brush StatusBrush => !device.Connected ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255,138,138)) : !device.SyncEnabled || shell.App.IsPaused ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(245,183,74)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(61,220,151));
 
     public bool SyncEnabled
     {
@@ -144,18 +150,24 @@ public sealed class DashboardClipViewModel : ObservableObject, IDisposable
     private readonly DispatcherTimer revealTimer = new() { Interval = TimeSpan.FromSeconds(10) };
     private bool revealed;
     private bool disposed;
+    private bool copied;
+    private readonly DispatcherTimer copiedTimer = new() { Interval = TimeSpan.FromMilliseconds(1500) };
+    private readonly ShellViewModel shell;
 
     public DashboardClipViewModel(ClipSync.Windows.Clipboard.ClipboardHistory.Entry clip, ShellViewModel shell)
     {
         this.clip = clip;
+        this.shell = shell;
         revealTimer.Tick += Remask;
+        copiedTimer.Tick += CopiedTimerTick;
         RevealCommand = new RelayCommand(ToggleReveal);
         CopyCommand = new RelayCommand(() =>
         {
             try
             {
                 shell.App.CopyClip(clip.Id);
-                shell.Notify("Copied to clipboard");
+                copied = true; copiedTimer.Stop(); copiedTimer.Start(); Raise(nameof(IsCopied)); Raise(nameof(CopyToolTip));
+                shell.Notify("Copied");
             }
             catch (Exception ex)
             {
@@ -168,11 +180,16 @@ public sealed class DashboardClipViewModel : ObservableObject, IDisposable
         ? Mask
         : clip.Text.Replace('\r', ' ').Replace('\n', ' ');
     public string Direction => clip.Direction == "Received" ? "From phone" : "From PC";
-    public string Time => clip.At.LocalDateTime.ToString("g");
+    public string Time => TimeFormatter.Format(clip.At);
+    public string FullTime => TimeFormatter.Full(clip.At);
     public bool Sensitive => clip.Sensitive;
     public string RevealLabel => revealed ? "Hide sensitive clip" : "Reveal sensitive clip";
     public ICommand RevealCommand { get; }
+    public bool IsCopied => copied;
+    public string CopyToolTip => copied ? "Copied" : "Copy clip";
     public ICommand CopyCommand { get; }
+
+    private void CopiedTimerTick(object? sender, EventArgs e) { copiedTimer.Stop(); copied = false; Raise(nameof(IsCopied)); Raise(nameof(CopyToolTip)); }
 
     private void ToggleReveal()
     {
@@ -207,6 +224,7 @@ public sealed class DashboardClipViewModel : ObservableObject, IDisposable
 
         disposed = true;
         revealTimer.Stop();
+        copiedTimer.Stop(); copiedTimer.Tick -= CopiedTimerTick;
         revealTimer.Tick -= Remask;
         revealed = false;
     }

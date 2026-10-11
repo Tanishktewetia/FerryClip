@@ -73,7 +73,7 @@ public sealed class DeviceCardViewModel : ObservableObject
         SaveRenameCommand = new RelayCommand(SaveRename);
         CancelRenameCommand = new RelayCommand(() => { IsEditing = false; Error = ""; });
         ForgetCommand = new AsyncCommand(async () => {
-            if (await shell.ConfirmAsync("Forget device?", $"Forget {Name}? To sync with it again, you will need to pair it with a new code."))
+            if (await shell.ConfirmAsync("Forget this device?", $"Forget {Name}? To sync with it again, you will need to pair it with a new code."))
             { shell.App.ForgetDevice(Id); shell.App.Refresh(); shell.Notify("Device forgotten"); }
         }, shell.App.Report);
     }
@@ -85,11 +85,12 @@ public sealed class DeviceCardViewModel : ObservableObject
         set { if (value == snapshot.SyncEnabled) return; try { shell.App.SetDeviceSync(Id, value); shell.App.Refresh(); } catch (Exception ex) { shell.App.Report(ex); Raise(); } }
     }
     public string Status => !snapshot.Connected ? "Unreachable" : shell.App.IsPaused || !snapshot.SyncEnabled ? "Paused" : "Connected";
-    public System.Windows.Media.Brush StatusBrush => (System.Windows.Media.Brush)(System.Windows.Application.Current.MainWindow?.TryFindResource(Status == "Connected" ? "Connected" : Status == "Paused" ? "Paused" : "Danger") ?? System.Windows.Media.Brushes.Gray);
-    public string Subtitle => $"{Status} · {Relative(snapshot.Connected ? snapshot.Since : snapshot.Last)}";
+    public System.Windows.Media.Brush StatusBrush => Status switch { "Connected" => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(61,220,151)), "Paused" => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(245,183,74)), _ => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255,138,138)) };
+    public string Subtitle => $"{Status} · {TimeFormatter.Format(snapshot.Connected ? snapshot.Since : snapshot.Last)}";
     public string Address => PlainIPv4(snapshot.Address);
     public string TimeLabel => snapshot.Connected ? "Connected since" : "Last seen";
-    public string TimeValue => (snapshot.Connected ? snapshot.Since : snapshot.Last)?.LocalDateTime.ToString("g") ?? "Not available";
+    public string TimeValue => TimeFormatter.Format(snapshot.Connected ? snapshot.Since : snapshot.Last);
+    public string FullTime => TimeFormatter.Full(snapshot.Connected ? snapshot.Since : snapshot.Last);
     public string Network => snapshot.Connected ? "Local network" : "Not connected";
     public bool IsEditing { get => editing; private set { Set(ref editing, value); Raise(nameof(IsNotEditing)); } }
     public bool IsNotEditing => !IsEditing;
@@ -106,14 +107,8 @@ public sealed class DeviceCardViewModel : ObservableObject
         try { shell.App.RenameDevice(Id, DraftName.Trim()); shell.App.Refresh(); IsEditing = false; Error = ""; shell.Notify("Device renamed"); }
         catch (Exception ex) { Error = ex.Message; shell.App.Report(ex); }
     }
-    internal void Update(DeviceSnapshot value) { snapshot = value; foreach (var property in new[] { nameof(Name), nameof(SyncEnabled), nameof(Status), nameof(StatusBrush), nameof(Subtitle), nameof(Address), nameof(TimeLabel), nameof(TimeValue), nameof(Network) }) Raise(property); }
-    internal void RefreshTime() => Raise(nameof(Subtitle));
-    static string Relative(DateTimeOffset? time)
-    {
-        if (time is null) return "Time not available";
-        var elapsed = DateTimeOffset.UtcNow - time.Value;
-        return elapsed.TotalMinutes < 1 ? "Just now" : elapsed.TotalHours < 1 ? $"{(int)elapsed.TotalMinutes} min ago" : elapsed.TotalDays < 1 ? $"{(int)elapsed.TotalHours} hr ago" : $"{(int)elapsed.TotalDays} days ago";
-    }
+    internal void Update(DeviceSnapshot value) { snapshot = value; foreach (var property in new[] { nameof(Name), nameof(SyncEnabled), nameof(Status), nameof(StatusBrush), nameof(Subtitle), nameof(Address), nameof(TimeLabel), nameof(TimeValue), nameof(FullTime), nameof(Network) }) Raise(property); }
+    internal void RefreshTime() { Raise(nameof(Subtitle)); Raise(nameof(TimeValue)); Raise(nameof(FullTime)); }
     public static string PlainIPv4(string? address)
     {
         if (string.IsNullOrWhiteSpace(address)) return "Not available";

@@ -57,8 +57,10 @@ public sealed class AppState : ObservableObject, IDisposable
  public void RenameDevice(string id,string name){if(string.IsNullOrWhiteSpace(name)||name.Length>80)throw new ArgumentException("Use a name between 1 and 80 characters.");backend.Rename(id,name.Trim());}
  public void ForgetDevice(string id)=>backend.Forget(id);
  public void CopyPairingCode(){dispatcher.VerifyAccess();if(!Pairing.Active)throw new InvalidOperationException("Pairing code expired.");if(!backend.Copy(Pairing.Code!))throw new InvalidOperationException("Clipboard is busy; try again.");}
+ public bool CopyAppInfo(string text){dispatcher.VerifyAccess();return backend.Copy(text);}
  public void CopyClip(Guid id){var clip=History.Single(e=>e.Id==id);if(!backend.Copy(clip.Text))throw new InvalidOperationException("Clipboard is busy; try again.");}
  public async Task PinClip(Guid id,bool pinned){await history.PinAsync(id,pinned);CheckHistoryError();await ReloadHistoryAsync();}
+ public async Task RestoreHistoryEntry(ClipboardHistory.Entry entry){await history.RestoreAsync(entry);CheckHistoryError();await ReloadHistoryAsync();}
  public async Task DeleteClip(Guid id){await history.DeleteAsync(id);CheckHistoryError();await ReloadHistoryAsync();}
  public async Task ClearHistory(bool includePinned=false){await history.ClearAsync(includePinned);CheckHistoryError();await ReloadHistoryAsync();}
  void CheckHistoryError(){if(history.Error is {} error)throw new InvalidOperationException(error);}

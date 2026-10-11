@@ -1,0 +1,7 @@
+FerryClip — Third-party notices
+
+This notice list was checked against the Windows application's resolved NuGet dependency assets.
+
+No third-party NuGet package dependencies are declared or resolved by the FerryClip Windows application. ClipSync.Core is an in-repository project reference, not a third-party dependency.
+
+The application targets the Microsoft .NET 10 Windows Desktop shared framework (WPF and Windows Forms). Microsoft .NET is distributed under the MIT License. Runtime and operating-system components are provided by Microsoft and remain subject to their respective license terms.

@@ -88,6 +88,7 @@ public static class PreviewRunner
   }
   if(gallery||page=="gallery"){await history.RecordAsync("Private preview phrase","Received",true);history.Configure(new(true,100,0,false));await history.RecordAsync("Sensitive fixture — reveal to view","Received",true);await facade.ReloadHistoryAsync();window.SetPreviewContent(Gallery(vm,backend));}
   if(smoke){
+  TimeFormatterTests.Run();
   using(var settingsVm=new Pages.Settings.SettingsViewModel(vm))
   {
    settingsVm.CloseToTray=false;if(facade.Settings.CloseToTray)throw new Exception("Close-to-tray setting");

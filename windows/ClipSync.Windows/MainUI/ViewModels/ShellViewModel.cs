@@ -15,7 +15,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
 {
  public static readonly string[] PageNames=["Dashboard","Devices","History","Settings","Help & Docs","About"];
  readonly AppState state;bool disposed;string page="Dashboard",toast="",dialogTitle="",dialogText="";TaskCompletionSource<bool>? confirmation;
- public ShellViewModel(AppState state){this.state=state;foreach(var name in PageNames)Navigation.Register(name,()=>null);RegisterPages();Items=new(PageNames.Select((name,i)=>new NavigationItem(name,new[]{"DashboardIcon","DevicesIcon","HistoryIcon","SettingsIcon","HelpIcon","AboutIcon"}[i],new RelayCommand(()=>Navigate(name)))));Navigate(state.Settings.LastPage);state.PropertyChanged+=StateChanged;state.ActionFailed+=Failed;ConfirmCommand=new RelayCommand(()=>CompleteDialog(true));CancelCommand=new RelayCommand(()=>CompleteDialog(false));DismissToastCommand=new RelayCommand(()=>Toast="");}
+ public ShellViewModel(AppState state){this.state=state;foreach(var name in PageNames)Navigation.Register(name,()=>null);RegisterPages();Items=new(PageNames.Select((name,i)=>new NavigationItem(name,new[]{"DashboardIcon","DevicesIcon","HistoryIcon","SettingsIcon","HelpIcon","AboutIcon"}[i],new RelayCommand(()=>Navigate(name)))));DevicesCommand=new RelayCommand(()=>Navigate("Devices"));Navigate(state.Settings.LastPage);state.PropertyChanged+=StateChanged;state.ActionFailed+=Failed;ConfirmCommand=new RelayCommand(()=>CompleteDialog(true));CancelCommand=new RelayCommand(()=>CompleteDialog(false));DismissToastCommand=new RelayCommand(()=>Toast="");}
  void RegisterPages()
  {
   Navigation.Register("Dashboard",()=>new Pages.Dashboard.DashboardPage(this));
@@ -39,10 +39,10 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
  public string DialogText{get=>dialogText;private set=>Set(ref dialogText,value);}
  public bool DialogOpen=>confirmation is not null;
  public ICommand WebsiteCommand {get;}=new RelayCommand(()=>System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://ferryclip.app"){UseShellExecute=true}));
- public ICommand ConfirmCommand{get;} public ICommand CancelCommand{get;} public ICommand DismissToastCommand{get;}
+ public ICommand ConfirmCommand{get;} public ICommand CancelCommand{get;} public ICommand DismissToastCommand{get;} public ICommand DevicesCommand{get;}
  public string StatusTitle=>state.State switch {Models.ConnectionState.NoDevices=>"No devices",Models.ConnectionState.Unreachable=>"Not connected",_=>state.State.ToString()};
- public System.Windows.Media.Brush StatusBrush=>new System.Windows.Media.SolidColorBrush(state.State==Models.ConnectionState.Paused?System.Windows.Media.Color.FromRgb(234,187,98):state.State==Models.ConnectionState.Connected?System.Windows.Media.Color.FromRgb(83,202,155):System.Windows.Media.Color.FromRgb(171,181,195));
- public string StatusDescription=>$"{state.Devices.Count(d=>d.Connected)} {(state.Devices.Count(d=>d.Connected)==1?"device":"devices")} on your local network";
+ public System.Windows.Media.Brush StatusBrush=>new System.Windows.Media.SolidColorBrush(state.State switch { Models.ConnectionState.Paused=>System.Windows.Media.Color.FromRgb(234,187,98), Models.ConnectionState.Connected=>System.Windows.Media.Color.FromRgb(83,202,155), Models.ConnectionState.Unreachable=>System.Windows.Media.Color.FromRgb(255,138,138), _=>System.Windows.Media.Color.FromRgb(171,181,195) });
+ public string StatusDescription=>$"{state.Devices.Count(d=>d.Connected)} {(state.Devices.Count(d=>d.Connected)==1?"device":"devices")}"; public string FooterLinkText=>$"v{App.Version} - ferryclip.app ↗";
  public event Action? HistorySearchRequested;
  public void FocusHistorySearch(){Navigate("History");HistorySearchRequested?.Invoke();}
  public void Navigate(string name){if(!PageNames.Contains(name))name="Dashboard";Page=name;Navigation.Navigate(name);if(Items is not null)foreach(var item in Items)item.IsSelected=item.Title==name;}
@@ -53,4 +53,3 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
  void StateChanged(object? sender,PropertyChangedEventArgs e){Raise(nameof(StatusTitle));Raise(nameof(StatusBrush));Raise(nameof(StatusDescription));}
  public void Dispose(){disposed=true;++toastRevision;state.PropertyChanged-=StateChanged;state.ActionFailed-=Failed;CompleteDialog(false);Navigation.Dispose();}
 }
-

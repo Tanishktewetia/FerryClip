@@ -35,7 +35,8 @@ public sealed class ClipboardHistory
         if (!_policy.Save || (_policy.SkipSensitive && sensitive) || string.IsNullOrEmpty(text) || text.Length > 65536) return;
         if (_entries.FirstOrDefault() is { } latest && latest.Text == text && latest.Direction == direction) return;
         _entries.Insert(0, new Entry(Guid.NewGuid(), text, direction, DateTimeOffset.UtcNow, false, sensitive));
-    });    public Task DeleteAsync(Guid id) => MutateAsync(() => _entries.RemoveAll(e => e.Id == id));
+    });    public Task RestoreAsync(Entry entry) => MutateAsync(() => { if (!_policy.Save || _entries.Any(e => e.Id == entry.Id)) return; _entries.Insert(0, entry); });
+    public Task DeleteAsync(Guid id) => MutateAsync(() => _entries.RemoveAll(e => e.Id == id));
     public Task ClearAsync(bool includePinned = false) => MutateAsync(() => _entries.RemoveAll(e => includePinned || !e.Pinned));
     public Task PinAsync(Guid id, bool pinned) => MutateAsync(() => { var i = _entries.FindIndex(e => e.Id == id); if(i >= 0) _entries[i] = _entries[i] with { Pinned = pinned }; });
     async Task MutateAsync(Action change)

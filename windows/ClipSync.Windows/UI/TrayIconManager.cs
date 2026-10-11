@@ -144,8 +144,10 @@ public sealed class TrayIconManager : IDisposable
     {
         using var bitmap = new Bitmap(size, size);
         using var graphics = Graphics.FromImage(bitmap);
-        graphics.ScaleTransform(size / 32f, size / 32f);
+
         graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
         graphics.Clear(Color.Transparent);
         var resource = WpfApplication.GetResourceStream(new Uri("pack://application:,,,/FerryClip;component/Assets/ferryclip_logo.png"))
             ?? throw new FileNotFoundException("FerryClip tray logo resource is missing.");
@@ -157,14 +159,14 @@ public sealed class TrayIconManager : IDisposable
                 using var attributes=new System.Drawing.Imaging.ImageAttributes();
                 attributes.SetColorMatrix(new System.Drawing.Imaging.ColorMatrix(new[] {
                     new float[] {.299f,.299f,.299f,0,0},new float[] {.587f,.587f,.587f,0,0},new float[] {.114f,.114f,.114f,0,0},new float[] {0,0,0,1,0},new float[] {0,0,0,0,1} }));
-                graphics.DrawImage(logo,new Rectangle(1,6,30,20),0,0,logo.Width,logo.Height,GraphicsUnit.Pixel,attributes);
+                var inset=Math.Max(1,size/8);var extent=size-inset*2;var bounds=new Rectangle(inset,inset,extent,extent);
+                graphics.DrawImage(logo,bounds,0,0,logo.Width,logo.Height,GraphicsUnit.Pixel,attributes);
             }
-            else graphics.DrawImage(logo,new Rectangle(1,6,30,20));
+            else {var inset=Math.Max(1,size/8);var extent=size-inset*2;graphics.DrawImage(logo,new Rectangle(inset,inset,extent,extent));}
         }
         if(state=="Paused")
         {
-            using var badge=new SolidBrush(Color.FromArgb(245,183,74));graphics.FillEllipse(badge,19,19,13,13);
-            using var ink=new SolidBrush(Color.FromArgb(11,42,82));graphics.FillRectangle(ink,23,22,2,7);graphics.FillRectangle(ink,27,22,2,7);
+            var badgeSize=Math.Max(6,size*0.4f);var badgeX=size-badgeSize;var badgeY=size-badgeSize;using var badge=new SolidBrush(Color.FromArgb(245,183,74));graphics.FillEllipse(badge,badgeX,badgeY,badgeSize,badgeSize);var barWidth=Math.Max(1,size/16);var barHeight=Math.Max(3,badgeSize*0.48f);var barGap=Math.Max(1,size/16);var barX=badgeX+(badgeSize-(barWidth*2+barGap))/2;var barY=badgeY+(badgeSize-barHeight)/2;using var ink=new SolidBrush(Color.FromArgb(11,42,82));graphics.FillRectangle(ink,barX,barY,barWidth,barHeight);graphics.FillRectangle(ink,barX+barWidth+barGap,barY,barWidth,barHeight);
         }
         var handle = bitmap.GetHicon();
         try { using var icon = Icon.FromHandle(handle); return (Icon)icon.Clone(); }

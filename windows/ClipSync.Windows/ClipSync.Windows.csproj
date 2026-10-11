@@ -9,6 +9,7 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>FerryClip</AssemblyName>
+    <ApplicationIcon>Assets\ferryclip.ico</ApplicationIcon>
     <RootNamespace>ClipSync.Windows</RootNamespace>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
@@ -16,6 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="..\ClipSync.Core\ClipSync.Core.csproj" />
     <Resource Include="Assets\ferryclip_logo.png" />
+    <Resource Include="Assets\ferryclip.ico" />
+    <EmbeddedResource Include="Resources\ThirdPartyNotices.txt" />
   </ItemGroup>
 
 </Project>

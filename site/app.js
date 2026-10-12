@@ -16,6 +16,30 @@
     try { localStorage.setItem('clipsync-theme', saved); } catch { }
   });
   color.addEventListener('change', e => { if (!saved) applyTheme(e.matches ? 'dark' : 'light'); });
+
+  const menuButton = document.querySelector('.nav-menu-toggle');
+  const primaryNav = document.querySelector('#primary-navigation');
+  if (menuButton && primaryNav) {
+    const closeMenu = () => {
+      menuButton.setAttribute('aria-expanded', 'false');
+      menuButton.setAttribute('aria-label', 'Open navigation');
+      primaryNav.classList.remove('is-open');
+    };
+    menuButton.addEventListener('click', () => {
+      const open = menuButton.getAttribute('aria-expanded') !== 'true';
+      menuButton.setAttribute('aria-expanded', String(open));
+      menuButton.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+      primaryNav.classList.toggle('is-open', open);
+      if (open) primaryNav.querySelector('a')?.focus();
+    });
+    primaryNav.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && menuButton.getAttribute('aria-expanded') === 'true') {
+        closeMenu(); menuButton.focus();
+      }
+    });
+    document.addEventListener('click', event => { if (!event.target.closest('.nav')) closeMenu(); });
+  }
   document.querySelectorAll('.apk-download,.windows-download').forEach(link => link.addEventListener('click', () => {
     const windows = link.classList.contains('windows-download');
     document.querySelectorAll('.download-status').forEach(status => { status.textContent = windows
@@ -34,7 +58,12 @@
     const updateActiveSection = () => {
       navFrame = 0;
       let active = sections[0];
-      for (const section of sections) { if (section.getBoundingClientRect().top <= 150) active = section; else break; }
+      const atPageEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      if (atPageEnd) active = sections[sections.length - 1];
+      else for (const section of sections) {
+        if (section.getBoundingClientRect().top <= 170) active = section;
+        else break;
+      }
       links.forEach(link => {
         const current = link.getAttribute('href') === `#${active?.id}`;
         if (current) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current');

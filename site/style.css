@@ -47,3 +47,41 @@
 .app-shot-main{grid-row:span 2;align-self:center;}
 @media(max-width:800px){.app-gallery{padding-block:55px 65px;}.app-gallery-grid{grid-template-columns:1fr;gap:14px;}.app-shot-main{grid-row:auto;}.docs-sidebar a[aria-current="location"]{border-color:var(--brand);}}
 @media(prefers-reduced-motion:reduce){.app-shot{scroll-behavior:auto;}}
+/* Shared navigation, mobile menu, and theme-matched scrollbar. */
+:root{scrollbar-color:color-mix(in srgb,var(--muted) 42%,transparent) transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 38%,transparent);border:2px solid var(--bg);border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--brand) 78%,var(--muted))}
+.site-header .nav nav a[aria-current=page]{color:var(--ink);font-weight:650;position:relative}
+.site-header .nav nav a[aria-current=page]:after{content:"";position:absolute;bottom:3px;left:0;right:0;height:2px;border-radius:2px;background:var(--brand)}
+.nav-menu-toggle{display:none}
+.faq-intro{max-width:290px;margin:13px 0 8px;font-size:14px;line-height:1.7}
+.platform-symbol{width:34px;height:34px;display:grid;place-items:center;margin-bottom:17px;color:var(--brand)}
+.platform-symbol svg{width:30px;height:30px;fill:currentColor;stroke:none}
+.platform-download>p:not(.platform-fine){font-size:13px;line-height:1.7;color:var(--ink);font-weight:550;font-variant-numeric:tabular-nums;min-height:44px}
+.platform-download .button{min-height:54px;width:100%;justify-content:space-between;margin-top:18px;padding:12px 19px;background:var(--cta);color:var(--cta-text)}
+.platform-download .button:hover{background:var(--brand-hover);color:var(--bg)}
+.platform-download .platform-fine{color:var(--muted);min-height:0}
+.download-section>.download-fine{color:var(--muted);line-height:1.8}
+.download-fine a{text-decoration:underline;text-underline-offset:3px;color:var(--ink)}
+@media(max-width:800px){
+ .site-header{height:72px}.nav{gap:12px;position:relative}
+ .nav-menu-toggle{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);cursor:pointer;order:3}
+ .nav-menu-toggle span{width:16px;height:1.5px;background:currentColor;transition:transform .2s}
+ .nav-menu-toggle[aria-expanded=true] span:first-child{transform:translateY(3.25px) rotate(45deg)}.nav-menu-toggle[aria-expanded=true] span:last-child{transform:translateY(-3.25px) rotate(-45deg)}
+ .nav-actions{margin-left:auto;gap:8px}
+ .nav nav{display:none;position:absolute;top:calc(100% + 1px);left:-1px;right:-1px;z-index:30;flex-direction:column;gap:2px;padding:10px 16px 14px;background:var(--header);border:1px solid var(--line);border-radius:0 0 16px 16px;box-shadow:0 16px 28px #0002}
+ .nav nav.is-open{display:flex}.nav nav a{min-height:46px;padding-inline:8px}.site-header .nav nav a[aria-current=page]:after{display:none}.platform-download>p:not(.platform-fine){min-height:0}
+}
+@media(max-width:420px){.brand{font-size:21px}.nav-actions .button.small{padding-inline:13px}.theme-toggle{width:40px;height:40px}.nav-menu-toggle{width:40px;height:40px}}
+@media(prefers-reduced-motion:reduce){.nav-menu-toggle span{transition:none}}
+/* Final theme and scrollbar refinements. */
+html{scrollbar-gutter:stable;scrollbar-color:var(--scroll-thumb,var(--muted)) transparent}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--scroll-thumb,var(--muted));border:2px solid var(--bg);border-radius:999px}
+:root[data-theme=dark]{--scroll-thumb:#687160}
+:root[data-theme=light]{--scroll-thumb:#a0a79a}
+:root[data-theme=dark] .download-section{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+:root[data-theme=dark] .platform-download{background:var(--soft);border-color:var(--line)}
+:root[data-theme=dark] .platform-download .text-link{color:var(--brand)}

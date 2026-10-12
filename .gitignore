@@ -1,4 +1,10 @@
 # Build output
+/FerryClip-*-debug.apk
+/FerryClip-*-release.apk
+/FerryClip-*-Windows/
+/FerryClip-*-Windows-compressed/
+/artifacts/
+/%SystemDrive%/
 bin/
 obj/
 build/
@@ -47,6 +53,7 @@ TestResults/
 # Keep local notes and phase reports out of Git; publish only the root README
 *.md
 !/README.md
+!/THIRD_PARTY_NOTICES.md
 /docs/
 
 # Test sources and preview/verification fixtures stay local

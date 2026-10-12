@@ -18,6 +18,8 @@ if ($LASTEXITCODE -ne 0) { throw "Windows publish failed with exit code $LASTEXI
 $source = Join-Path $publish 'FerryClip.exe'
 if (-not (Test-Path -LiteralPath $source)) { throw "Published executable not found at $source" }
 Copy-Item -LiteralPath $source -Destination $target -Force
+Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $dist 'LICENSE') -Force
+Copy-Item -LiteralPath (Join-Path $root 'THIRD_PARTY_NOTICES.md') -Destination (Join-Path $dist 'THIRD_PARTY_NOTICES.md') -Force
 $bytes = [IO.File]::ReadAllBytes($target)
 if ($bytes.Length -lt 2 -or $bytes[0] -ne 0x4d -or $bytes[1] -ne 0x5a) { throw 'Generated FerryClip file is not a Windows executable.' }
 $info = [Diagnostics.FileVersionInfo]::GetVersionInfo($target)

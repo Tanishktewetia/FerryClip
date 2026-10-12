@@ -42,6 +42,8 @@ if (Test-Path $apkSource) {
     $destName = "FerryClip-beta-$version.apk"
     $dest = Join-Path $distDir $destName
     Copy-Item $apkSource $dest -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "..\LICENSE") -Destination (Join-Path $distDir "LICENSE") -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "..\THIRD_PARTY_NOTICES.md") -Destination (Join-Path $distDir "THIRD_PARTY_NOTICES.md") -Force
     Write-Host "APK copied to: $dest" -ForegroundColor Green
     Write-Host "File size: $([math]::Round((Get-Item $dest).Length / 1MB, 2)) MB" -ForegroundColor Gray
 } else {

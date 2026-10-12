@@ -32,6 +32,8 @@ Compress-Archive -Path (Join-Path $publish '*') -DestinationPath $payload -Compr
 $installScript = (Get-Content -LiteralPath (Join-Path $installerSource 'Install-ClipSync.ps1') -Raw).Replace('__VERSION__', $version)
 Set-Content -LiteralPath (Join-Path $staging 'Install-ClipSync.ps1') -Value $installScript -Encoding utf8
 Copy-Item -LiteralPath (Join-Path $installerSource 'Uninstall-ClipSync.ps1') -Destination (Join-Path $staging 'Uninstall-ClipSync.ps1')
+Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $root 'dist\LICENSE') -Force
+Copy-Item -LiteralPath (Join-Path $root 'THIRD_PARTY_NOTICES.md') -Destination (Join-Path $root 'dist\THIRD_PARTY_NOTICES.md') -Force
 Set-Content -LiteralPath (Join-Path $staging 'install.cmd') -Encoding ascii -Value "@echo off`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"%~dp0Install-ClipSync.ps1`"`r`nexit /b %ERRORLEVEL%`r`n"
 
 $filename = "FerryClip-Setup-$version-win-x64.exe"

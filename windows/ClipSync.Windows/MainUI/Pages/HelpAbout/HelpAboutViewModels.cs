@@ -73,8 +73,8 @@ public sealed class AboutPageViewModel : ObservableObject, IDisposable
  public string CopyrightText=>"(c) 2026 FerryClip";
  public string ThirdPartyNotices{get;}
  public bool ShowingNotices{get=>showingNotices;private set{if(showingNotices==value)return;showingNotices=value;Raise(nameof(ShowingNotices));}}
- public bool LicenseAvailable=>false;
- public string LicenseName=>"";
+ public bool LicenseAvailable=>true;
+ public string LicenseName=>"MIT License · view notices";
  public IReadOnlyList<AboutFeature> Features{get;}=[
   new("Encrypted on your network","TLS 1.3 between your PC and phone",Geometry.Parse("M4,9 L16,9 16,18 4,18 Z M6,9 L6,6 A4,4 0 0 1 14,6 L14,9 M10,12 L10,15")),
   new("No cloud needed","No internet, account or cloud clipboard",Geometry.Parse("M6,16 C3.8,16 2,14.2 2,12 C2,9.8 3.8,8 6,8 C6.4,4.6 9,2 12,2 C15.4,2 18,4.6 18,8 C20.2,8.2 22,10 22,12 C22,14.2 20.2,16 18,16 Z M3,3 L21,21")),

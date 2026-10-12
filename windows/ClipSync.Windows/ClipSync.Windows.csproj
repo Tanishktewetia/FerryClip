@@ -19,6 +19,8 @@
     <Resource Include="Assets\ferryclip_logo.png" />
     <Resource Include="Assets\ferryclip.ico" />
     <EmbeddedResource Include="Resources\ThirdPartyNotices.txt" />
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

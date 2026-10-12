@@ -9,6 +9,12 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
@@ -17,7 +23,9 @@ import com.clipsync.android.BuildConfig
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit, onHelp: () -> Unit, diagnosticsEnabled: Boolean) {
-    BackHandler(onBack = onBack)
+    var showingLicenses by rememberSaveable { mutableStateOf(false) }
+    BackHandler { if (showingLicenses) showingLicenses = false else onBack() }
+    if (showingLicenses) { OpenSourceLicensesScreen(onBack = { showingLicenses = false }); return }
     val links = LocalUriHandler.current
     Scaffold(topBar = { TopAppBar(title = { Text("About FerryClip") }, navigationIcon = {
         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back to Settings") }
@@ -31,10 +39,25 @@ fun AboutScreen(onBack: () -> Unit, onHelp: () -> Unit, diagnosticsEnabled: Bool
             Text("Connections use TLS and saved certificate identities. Pair by comparing a code, choose one active PC, and pause whenever you want. Clipboard text is kept in memory, not saved as a history or written into app logs.")
             Text("Version ${BuildConfig.VERSION_NAME} · Text sync", style = MaterialTheme.typography.bodyMedium)
             Text("Project: Tanishktewetia / FerryClip", style = MaterialTheme.typography.bodyMedium)
+            OutlinedButton(onClick = { showingLicenses = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("Open source licenses") }
             Button(onClick = onHelp, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("Read the FerryClip guide") }
             OutlinedButton(onClick = { links.openUri(PROJECT_URL) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("GitHub · Source & documentation"); Spacer(Modifier.width(8.dp)); Icon(Icons.AutoMirrored.Outlined.OpenInNew, "Opens externally") }
             OutlinedButton(onClick = { links.openUri("$PROJECT_URL/issues") }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = MaterialTheme.shapes.medium) { Text("Report an issue on GitHub"); Spacer(Modifier.width(8.dp)); Icon(Icons.AutoMirrored.Outlined.OpenInNew, "Opens externally") }
             if (diagnosticsEnabled) Text("Need support? Settings → Diagnostics lets you share connection logs. Remove personal details before posting a public issue.", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OpenSourceLicensesScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val licenseText = remember { context.assets.open("open-source-licenses.txt").bufferedReader().use { it.readText() } }
+    Scaffold(topBar = { TopAppBar(title = { Text("Open source licenses") }, navigationIcon = {
+        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back to About") }
+    }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)) }) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp)) {
+            Text(licenseText, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

@@ -10,7 +10,7 @@
     themeButton?.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
     themeButton?.setAttribute('aria-pressed', String(theme === 'dark'));
   };
-  applyTheme(saved === 'light' || saved === 'dark' ? saved : color.matches ? 'dark' : 'light');
+  applyTheme(saved === 'light' || saved === 'dark' ? saved : 'dark');
   themeButton?.addEventListener('click', () => {
     saved = root.dataset.theme === 'dark' ? 'light' : 'dark'; applyTheme(saved);
     try { localStorage.setItem('clipsync-theme', saved); } catch { }
@@ -26,10 +26,30 @@
   if (checksum) fetch('downloads/SHA256SUMS.txt').then(r => { if (!r.ok) throw new Error('Unavailable'); return r.text(); })
     .then(text => { checksum.textContent = text.trim(); }).catch(() => { checksum.textContent = 'Checksum unavailable. Use SHA256SUMS.txt included with this build.'; });
 
+  const docSidebar = document.querySelector('.docs-sidebar');
+  if (docSidebar) {
+    const links = [...docSidebar.querySelectorAll('a[href^="#"]')];
+    const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+    let navFrame = 0;
+    const updateActiveSection = () => {
+      navFrame = 0;
+      let active = sections[0];
+      for (const section of sections) { if (section.getBoundingClientRect().top <= 150) active = section; else break; }
+      links.forEach(link => {
+        const current = link.getAttribute('href') === `#${active?.id}`;
+        if (current) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current');
+      });
+    };
+    const queueActiveSection = () => { if (!navFrame) navFrame = requestAnimationFrame(updateActiveSection); };
+    window.addEventListener('scroll', queueActiveSection, {passive:true});
+    window.addEventListener('resize', queueActiveSection);
+    docSidebar.addEventListener('click', event => { if (event.target.closest('a')) queueActiveSection(); });
+    updateActiveSection();
+  }
+
   const demo = document.querySelector('.flow-demo');
   if (!demo || !Element.prototype.animate || !window.IntersectionObserver) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-  const pauseButton = demo.querySelector('.motion-toggle');
   const playButton = demo.querySelector('.demo-play');
   const chapters = [...demo.querySelectorAll('[data-chapter-select]')];
   const message = demo.querySelector('.demo-message');
@@ -66,7 +86,7 @@
   let paused = false, visible = false, started = false, running = true;
   let elapsed = 0, cycle = 0, lastTime = null, frame = 0, lastScene = '';
   let demoAnimations = [], decorativeAnimations = [];
-  pauseButton.hidden = false; playButton.hidden = false;
+  playButton.hidden = false;
   demo.querySelector('.walkthrough-chapters').hidden = false;
   demo.dataset.cycle = '0';
 
@@ -180,12 +200,8 @@
     decorativeAnimations.push(animation);animation.finished.then(()=>{decorativeAnimations=decorativeAnimations.filter(a=>a!==animation);}).catch(()=>{});
   }),{threshold:.3});
   document.querySelectorAll('.section-heading h2,.download-section h2,.faq h2').forEach(element=>reveal.observe(element));
-  pauseButton.addEventListener('click',()=>{
-    paused=!paused;pauseButton.setAttribute('aria-pressed',String(paused));pauseButton.textContent=paused?'Resume motion':'Pause motion';demo.dataset.motion=paused?'paused':'enabled';
-    decorativeAnimations.forEach(a=>a.cancel());decorativeAnimations=[];stopFrames();renderScroll();if(!paused)wake();
-  });
   function motionPreference(){
-    decorativeAnimations.forEach(a=>a.cancel());decorativeAnimations=[];pauseButton.hidden=reduce.matches;
+    decorativeAnimations.forEach(a=>a.cancel());decorativeAnimations=[];
     playButton.textContent=reduce.matches?'Show pairing steps':'Restart walkthrough';
     if(reduce.matches){stopFrames();seek(demo.dataset.chapter||'pc',true);}
     else if(!started&&visible)seek('pair');else wake();

@@ -11,6 +11,7 @@ public static class HistoryPolicyTests
  static async Task WriteLegacy(string path,object entries){Directory.CreateDirectory(Path.GetDirectoryName(path)!);var bytes=JsonSerializer.SerializeToUtf8Bytes(entries);try{await File.WriteAllBytesAsync(path,ProtectedData.Protect(bytes,null,DataProtectionScope.CurrentUser));}finally{CryptographicOperations.ZeroMemory(bytes);}}
  public static async Task Run(string root)
  {
+  var sequence=new ClipboardSequenceTracker(100);Assert(!sequence.ShouldProcess(100),"Ignore unchanged clipboard sequence");Assert(sequence.ShouldProcess(101),"Accept changed clipboard sequence");sequence.MarkObserved(101);Assert(sequence.ShouldProcess(102),"Accept recopy of identical text with a new sequence");sequence.MarkObserved(102);sequence.MarkSelfWrite(103);Assert(!sequence.ShouldProcess(103),"Ignore FerryClip's own clipboard write");Assert(sequence.ShouldProcess(104),"Accept user copy after FerryClip clipboard write");
     var areas=new[]{new System.Windows.Rect(0,0,1920,1040),new System.Windows.Rect(-1280,0,1280,720)};
   var recovered=Services.PlacementRecovery.Recover(new(1100,720,5000,5000),areas);Assert(recovered.Left>=0&&recovered.Top>=0&&recovered.Left+recovered.Width<=1920,"Removed monitor recovery");
   var negative=Services.PlacementRecovery.Recover(new(900,600,-1200,20),areas);Assert(negative.Left<0&&negative.Left+negative.Width<=0,"Negative monitor recovery");

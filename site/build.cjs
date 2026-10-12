@@ -9,5 +9,5 @@ fs.cpSync(path.join(__dirname,'images'),path.join(destination,'images'),{recursi
 for (const file of ['LICENSE','THIRD_PARTY_NOTICES.md']) fs.copyFileSync(path.join(root,file),path.join(destination,file));
 const downloads = path.join(destination,'downloads');
 fs.mkdirSync(downloads,{recursive:true});
-fs.writeFileSync(path.join(downloads,'SHA256SUMS.txt'), 'a958e6480b3f466895fdfe2e9918ab6ff509cfed137ff03fc1ecd13e4fd7681f  FerryClip.exe\nd414436bda8a0842e3db79bc5ca3c7a896e019c338fdeca3982f94d6dd36096c  FerryClip-beta-0.8.11.apk\n');
-console.log('Built static website with FerryClip 0.8.11 release links and checksums.');
+fs.writeFileSync(path.join(downloads,'SHA256SUMS.txt'), 'c6b8bad52a7dbc622d8db5e3ff15477408765041dfd51785fcd7d60ab7d0447c  FerryClip-0.8.16-Windows.exe\n64fdfa629c681d2c5ec6ce6a19bbc4a12bcf331f87c029397fecaa54fd71d8e7  FerryClip-0.8.16-Android.apk\n');
+console.log('Built static website with FerryClip 0.8.16 release links and checksums.');

@@ -12,8 +12,8 @@ android {
         applicationId = "com.clipsync.android"
         minSdk = 24
         targetSdk = 34
-        versionCode = 17
-        versionName = "0.8.11"
+        versionCode = 22
+        versionName = "0.8.16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += "en"

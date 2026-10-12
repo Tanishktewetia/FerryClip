@@ -67,7 +67,7 @@ class TlsClipboardClient(private val context: Context, private val settings: Syn
     @Synchronized fun close() { heartbeatWatchdog?.cancel(); closed = true; readySocket = null; runCatching { socket?.close() }; socket = null }
 
     suspend fun run(address: String, port: Int = PORT, routeOverride: LocalPeerRoute? = null,
-                    connected: suspend () -> Unit, receive: suspend (String) -> Unit) {
+                    connected: suspend () -> Unit, receive: suspend (String, String?, Long?) -> Unit) {
         val ip = ManualAddress.parse(address)
         stage(ConnectionStage.WIFI_ROUTE)
         val manager = context.getSystemService(ConnectivityManager::class.java)
@@ -110,7 +110,8 @@ class TlsClipboardClient(private val context: Context, private val settings: Syn
             readySocket = secure
             stage(ConnectionStage.RECEIVING)
             connected()
-            write(SessionProtocol.hello(journal.latest, settings.replayOnConnect && !settings.paused))
+            val observedPcClock = com.clipsync.android.history.ClipboardHistory.get(context).latestRemoteSequence(remote)
+            write(SessionProtocol.hello(journal.latest, settings.replayOnConnect && !settings.paused, observedPcClock))
             lastPongAt = android.os.SystemClock.elapsedRealtime()
             var lastPing = lastPongAt
             heartbeatWatchdog = CoroutineScope(currentCoroutineContext()).launch(Dispatchers.Default) {
@@ -144,14 +145,14 @@ class TlsClipboardClient(private val context: Context, private val settings: Syn
                         MessageType.PING -> if (modern) write(ClipMessage(MessageType.PONG))
                         MessageType.PONG -> lastPongAt = android.os.SystemClock.elapsedRealtime()
                         MessageType.STATE -> if (modern && !settings.paused && journal.accept(frame)) {
-                            try { receive(frame.text ?: "") }
+                            try { receive(frame.text ?: "", frame.deviceId, frame.lamport) }
                             catch (e: CancellationException) { throw e }
                             catch (e: Exception) {
                                 journal.forgetIf(frame)
                                 throw java.io.IOException("Clipboard apply failed; retry newest on reconnect", e)
                             }
                         }
-                        MessageType.TEXT -> if (!settings.paused) { journal.clear(); receive(frame.text ?: "") }
+                        MessageType.TEXT -> if (!settings.paused) { journal.clear(); receive(frame.text ?: "", null, null) }
                         else -> Unit
                     }
                 }

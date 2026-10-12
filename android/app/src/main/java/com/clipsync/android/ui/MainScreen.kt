@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.clipsync.android.ui
 
 import androidx.compose.animation.AnimatedVisibility
@@ -13,11 +15,14 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -75,31 +80,42 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, onDismissCrash: () -> Uni
     var guide by rememberSaveable { mutableStateOf(false) }
     var forgetId by rememberSaveable { mutableStateOf<String?>(null) }
     var replacementId by rememberSaveable { mutableStateOf<String?>(null) }
+    var addingPc by rememberSaveable { mutableStateOf(false) }
     val crash = lastCrash != null
     val pageState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     if (help) { HelpScreen(onBack = { help = false; if(helpFromAbout) { about = true; helpFromAbout = false } }, onAddTile = onTile); return }
     if (about) { AboutScreen(onBack = { about = false }, onHelp = { about = false; helpFromAbout = true; help = true }, diagnosticsEnabled = BuildConfig.DIAGNOSTICS_ENABLED); return }
-    BackHandler(enabled = codeFocused) { keyboard?.hide(); focusManager.clearFocus(); codeFocused = false }
+    BackHandler(enabled = addingPc && !codeFocused) { addingPc = false; replacementId = null }
+    BackHandler(enabled = codeFocused) { keyboard?.hide(); focusManager.clearFocus(force = true); codeFocused = false }
     BackHandler(enabled = settings) { settings = false }
     pageState.SaveableStateProvider(if(settings) "settings" else "devices") {
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(Modifier.statusBarsPadding().fillMaxWidth().padding(horizontal = 20.dp)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 60.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (!settings) {
-                        Image(painterResource(com.clipsync.android.R.drawable.ferryclip_logo), contentDescription = "FerryClip logo",
-                            modifier = Modifier.width(48.dp).height(32.dp), contentScale = ContentScale.Fit)
-                        Spacer(Modifier.width(12.dp))
-                    }
-                    Text(if (settings) "Settings" else "FerryClip", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); help = true }) { Icon(Icons.AutoMirrored.Outlined.HelpOutline, "Help", tint = MaterialTheme.colorScheme.onSurface) }
-                    if (!settings) IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); history = true }) { Icon(Icons.Outlined.History, "Clipboard history") }
-                    IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(); settings = !settings }) {
-                        Icon(if (settings) Icons.Outlined.Close else Icons.Outlined.Settings,
-                            if (settings) "Back to devices" else "Settings", tint = MaterialTheme.colorScheme.onSurface)
+                    if (addingPc) {
+                        IconButton(onClick = {
+                            keyboard?.hide(); focusManager.clearFocus(force = true); codeFocused = false
+                            addingPc = false; replacementId = null
+                        }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") }
+                        Text(if (replacementId == null) "Add a PC" else "Replace PC pairing",
+                            style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    } else {
+                        if (!settings) {
+                            Image(painterResource(com.clipsync.android.R.drawable.ferryclip_logo), contentDescription = "FerryClip logo",
+                                modifier = Modifier.width(48.dp).height(32.dp), contentScale = ContentScale.Fit)
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        Text(if (settings) "Settings" else "FerryClip", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(force = true); help = true }) { Icon(Icons.AutoMirrored.Outlined.HelpOutline, "Help", tint = MaterialTheme.colorScheme.onSurface) }
+                        if (!settings) IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(force = true); history = true }) { Icon(Icons.Outlined.History, "Clipboard history") }
+                        IconButton(onClick = { keyboard?.hide(); focusManager.clearFocus(force = true); settings = !settings }) {
+                            Icon(if (settings) Icons.Outlined.Close else Icons.Outlined.Settings,
+                                if (settings) "Back to devices" else "Settings", tint = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
-                if (!settings) Row(Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                if (!settings && !addingPc) Row(Modifier.fillMaxWidth().padding(bottom = 16.dp)
                     .semantics { liveRegion = LiveRegionMode.Polite }, verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(8.dp).background(if (state.connected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
                     Spacer(Modifier.width(8.dp))
@@ -119,7 +135,7 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, onDismissCrash: () -> Uni
         }
     }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState())
+        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState()).imePadding()
             .padding(horizontal = if (settings) 16.dp else 20.dp, vertical = if (settings) 12.dp else 24.dp), verticalArrangement = Arrangement.spacedBy(if (settings) 12.dp else 20.dp)) {
             if (settings) {
                 SettingsPanel(
@@ -137,8 +153,9 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, onDismissCrash: () -> Uni
                     onShareLogs = onShareLogs,
                     onSaveLogs = onSaveLogs,
                 )
+            } else if (addingPc) {
+                AddDevice(state, onPair, onCancelPair, replacementId, { replacementId = it }, { codeFocused = it })
             } else {
-
                 if (!notifications || !battery || (!tile && !tileDismissed)) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Finish your setup", style = MaterialTheme.typography.titleMedium)
@@ -149,18 +166,32 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, onDismissCrash: () -> Uni
                         AnimatedVisibility(guide && !tile) { TileGuide(onTile) }
                     }
                 }
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable { addingPc = true },
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Add a PC", style = MaterialTheme.typography.titleSmall)
+                            Text("Enter a code generated by FerryClip on Windows", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
                 if (state.devices.isNotEmpty()) Text("Your PCs", style = MaterialTheme.typography.titleMedium)
                 DevicePolicy.ordered(state.devices).forEach { device -> key(device.id) {
-                    DeviceTile(device, state.networkLabel, onConnect, onDisconnect, onPause, { forgetId = device.id }, onRename, { replacementId = device.id })
+                    DeviceTile(device, state.networkLabel, onConnect, onDisconnect, onPause, { forgetId = device.id }, onRename, { replacementId = device.id; addingPc = true })
                 } }
                 state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
                 var sendNote by remember { mutableStateOf<String?>(null) }
                 LaunchedEffect(state.sendFeedback) { sendNote = state.sendFeedback; kotlinx.coroutines.delay(5000); sendNote = null }
                 sendNote?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                AddDevice(state, onPair, onCancelPair, replacementId, { replacementId = it }, { codeFocused = it })
-
             }
-            if (!settings) Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (!settings && !addingPc) Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Text("PC → phone automatically · Phone → PC with one tap", modifier = Modifier.padding(top = 12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = { help = true }, contentPadding = PaddingValues(0.dp)) { Text("How FerryClip works") }
@@ -235,6 +266,14 @@ private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cance
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     var code by rememberSaveable { mutableStateOf("") }
+    var codeFocused by remember { mutableStateOf(false) }
+    val codeBringIntoView = remember { BringIntoViewRequester() }
+    LaunchedEffect(codeFocused) {
+        if (codeFocused) {
+            kotlinx.coroutines.delay(150)
+            codeBringIntoView.bringIntoView()
+        }
+    }
     var devicesAtPairStart by remember { mutableStateOf<List<PairedDevice>?>(null) }
     var pairSearchStarted by remember { mutableStateOf(false) }
     LaunchedEffect(state.searching, state.pairingMessage, state.devices) {
@@ -254,7 +293,7 @@ private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cance
         }
         OutlinedTextField(code, { code = it.filter { digit -> digit in '0'..'9' }.take(6) }, label = { Text("Code from your PC") }, placeholder = { Text("123456") }, singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
-            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { keyboard?.hide(); focusManager.clearFocus() }), modifier = Modifier.fillMaxWidth().onFocusChanged { onCodeFocus(it.isFocused) }, enabled = !state.searching, textStyle = MaterialTheme.typography.headlineSmall)
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { keyboard?.hide(); focusManager.clearFocus() }), modifier = Modifier.fillMaxWidth().bringIntoViewRequester(codeBringIntoView).onFocusChanged { codeFocused = it.isFocused; onCodeFocus(it.isFocused) }, enabled = !state.searching, textStyle = MaterialTheme.typography.headlineSmall)
         Button(onClick = { keyboard?.hide(); focusManager.clearFocus(); devicesAtPairStart = state.devices; pairSearchStarted = false; pair(code, replacementId) }, enabled = code.length == 6 && !state.searching, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
             Text(if (state.searching) "Connecting on your local network…" else if (replacementId == null) "Pair this PC" else "Replace pairing")
         }

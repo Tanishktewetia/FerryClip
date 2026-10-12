@@ -7,9 +7,9 @@ import android.database.sqlite.SQLiteOpenHelper
 
 /** List queries never load the full clipboard payload into Compose. */
 data class HistoryEntry(val id: Long, val preview: String, val timestamp: Long,
-    val direction: String, val previewOnly: Boolean, val originalBytes: Int)
+    val direction: String, val previewOnly: Boolean, val originalBytes: Int, val searchableText: String)
 
-internal class HistoryDatabase(context: Context, private val cipher: HistoryCipher = HistoryCipher()) : SQLiteOpenHelper(context, "clipboard_history.db", null, 2) {
+internal class HistoryDatabase(context: Context, private val cipher: HistoryCipher = HistoryCipher()) : SQLiteOpenHelper(context, "clipboard_history.db", null, 4) {
     private var compactAfterMigration = false
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -20,8 +20,11 @@ internal class HistoryDatabase(context: Context, private val cipher: HistoryCiph
         db.execSQL("""CREATE TABLE entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT, preview BLOB NOT NULL, payload BLOB,
             created INTEGER NOT NULL, direction TEXT NOT NULL, original_bytes INTEGER NOT NULL,
-            stored_bytes INTEGER NOT NULL)""")
+            stored_bytes INTEGER NOT NULL, event_id TEXT, content_hash TEXT)""")
+        db.execSQL("CREATE TABLE source_cursors (origin TEXT PRIMARY KEY NOT NULL, sequence INTEGER NOT NULL)")
+        db.execSQL("CREATE UNIQUE INDEX entries_event_id ON entries(event_id)")
         db.execSQL("CREATE INDEX entries_created ON entries(created, id)")
+        db.execSQL("CREATE INDEX entries_content_hash ON entries(content_hash)")
     }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
@@ -38,6 +41,28 @@ internal class HistoryDatabase(context: Context, private val cipher: HistoryCiph
             }
             compactAfterMigration = true
         }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE entries ADD COLUMN event_id TEXT")
+            db.execSQL("CREATE TABLE source_cursors (origin TEXT PRIMARY KEY NOT NULL, sequence INTEGER NOT NULL)")
+            db.execSQL("CREATE UNIQUE INDEX entries_event_id ON entries(event_id)")
+        }
+        if (oldVersion < 4) {
+            db.execSQL("ALTER TABLE entries ADD COLUMN content_hash TEXT")
+            db.execSQL("CREATE INDEX entries_content_hash ON entries(content_hash)")
+            val fingerprints = mutableListOf<Pair<Long, String>>()
+            db.rawQuery("SELECT id, payload FROM entries WHERE payload IS NOT NULL", null).use { c ->
+                while (c.moveToNext()) fingerprints += c.getLong(0) to cipher.fingerprint(cipher.decrypt(c.getBlob(1), "payload"))
+            }
+            fingerprints.forEach { (id, fingerprint) ->
+                db.update("entries", ContentValues().apply { put("content_hash", fingerprint) }, "id = ?", arrayOf(id.toString()))
+            }
+            val duplicateIds = mutableListOf<Long>()
+            val seenFingerprints = mutableSetOf<String>()
+            db.rawQuery("SELECT id, content_hash FROM entries WHERE content_hash IS NOT NULL ORDER BY created DESC, id DESC", null).use { c ->
+                while (c.moveToNext()) if (!seenFingerprints.add(c.getString(1))) duplicateIds += c.getLong(0)
+            }
+            duplicateIds.forEach { id -> db.delete("entries", "id = ?", arrayOf(id.toString())) }
+        }
     }
     override fun onOpen(db: SQLiteDatabase) {
         super.onOpen(db)
@@ -49,20 +74,66 @@ internal class HistoryDatabase(context: Context, private val cipher: HistoryCiph
     }
 
     fun insert(text: String, direction: String, options: HistoryOptions, now: Long) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            insertInTransaction(db, text, direction, now, null)
+            prune(options, now)
+            db.setTransactionSuccessful()
+        } finally { db.endTransaction() }
+    }
+
+    /** Keeps a persistent source cursor so Clear history doesn't make replayed states look new. */
+    fun recordRemoteEvent(text: String, origin: String, sequence: Long, options: HistoryOptions,
+        now: Long, sensitive: Boolean): Boolean {
+        require(origin.isNotBlank() && sequence > 0)
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val previous = db.rawQuery("SELECT sequence FROM source_cursors WHERE origin = ?", arrayOf(origin))
+                .use { if (it.moveToFirst()) it.getLong(0) else 0L }
+            if (sequence <= previous) {
+                db.setTransactionSuccessful()
+                return false
+            }
+            db.insertWithOnConflict("source_cursors", null, ContentValues().apply {
+                put("origin", origin); put("sequence", sequence)
+            }, SQLiteDatabase.CONFLICT_REPLACE)
+            val saved = options.enabled && !(options.skipSensitive && sensitive) && text.isNotEmpty()
+            if (saved) {
+                insertInTransaction(db, text, "From PC", now, "$origin:$sequence")
+                prune(options, now)
+            }
+            db.setTransactionSuccessful()
+            return saved
+        } finally { db.endTransaction() }
+    }
+
+    fun latestRemoteSequence(origin: String): Long = readableDatabase.rawQuery(
+        "SELECT sequence FROM source_cursors WHERE origin = ?", arrayOf(origin)
+    ).use { if (it.moveToFirst()) it.getLong(0) else 0L }
+
+    private fun insertInTransaction(db: SQLiteDatabase, text: String, direction: String, now: Long, eventId: String?) {
+        val fingerprint = cipher.fingerprint(text)
+        val duplicateId = db.rawQuery("SELECT id FROM entries WHERE content_hash = ? LIMIT 1", arrayOf(fingerprint))
+            .use { if (it.moveToFirst()) it.getLong(0) else null }
+        if (duplicateId != null) {
+            // Keep one row per exact clip, but refresh its recency and direction when copied again.
+            db.update("entries", ContentValues().apply { put("created", now); put("direction", direction) },
+                "id = ?", arrayOf(duplicateId.toString()))
+            return
+        }
         val bytes = text.toByteArray(Charsets.UTF_8).size
         val preview = cipher.encrypt(HistoryStoragePolicy.preview(text), "preview")
         val payload = text.takeIf { bytes <= HistoryStoragePolicy.ITEM_BYTES }?.let { cipher.encrypt(it, "payload") }
         val values = ContentValues().apply {
             put("preview", preview); put("payload", payload); put("created", now)
             put("direction", direction); put("original_bytes", bytes)
-            put("stored_bytes", (payload?.size ?: 0) + preview.size + 128)
+            put("stored_bytes", (payload?.size ?: 0) + preview.size + 160)
+            put("content_hash", fingerprint)
+            if (eventId == null) putNull("event_id") else put("event_id", eventId)
         }
-        writableDatabase.beginTransaction()
-        try {
-            writableDatabase.insertOrThrow("entries", null, values)
-            prune(options, now)
-            writableDatabase.setTransactionSuccessful()
-        } finally { writableDatabase.endTransaction() }
+        db.insertOrThrow("entries", null, values)
     }
     fun prune(options: HistoryOptions, now: Long) {
         val db = writableDatabase
@@ -75,9 +146,23 @@ internal class HistoryDatabase(context: Context, private val cipher: HistoryCiph
         }
         HistoryStoragePolicy.evictions(oldest).forEach { db.delete("entries", "id = ?", arrayOf(it.toString())) }
     }
-    fun list(): List<HistoryEntry> = readableDatabase.rawQuery(
-        "SELECT id, preview, created, direction, payload IS NULL, original_bytes FROM entries ORDER BY created DESC, id DESC", null
-    ).use { c -> buildList { while (c.moveToNext()) add(HistoryEntry(c.getLong(0), cipher.decrypt(c.getBlob(1), "preview"), c.getLong(2), c.getString(3), c.getInt(4) != 0, c.getInt(5))) } }
+    private data class EntryMetadata(val id: Long, val preview: String, val timestamp: Long,
+        val direction: String, val previewOnly: Boolean, val originalBytes: Int)
+
+    fun list(): List<HistoryEntry> {
+        // Read payloads individually after closing the metadata cursor: a single cursor window
+        // must not hold many large encrypted clips at once.
+        val metadata = readableDatabase.rawQuery(
+            "SELECT id, preview, created, direction, payload IS NULL, original_bytes FROM entries ORDER BY created DESC, id DESC", null
+        ).use { c -> buildList {
+            while (c.moveToNext()) add(EntryMetadata(c.getLong(0), cipher.decrypt(c.getBlob(1), "preview"),
+                c.getLong(2), c.getString(3), c.getInt(4) != 0, c.getInt(5)))
+        } }
+        return metadata.map { row ->
+            val fullText = if (row.previewOnly) row.preview else payload(row.id) ?: row.preview
+            HistoryEntry(row.id, row.preview, row.timestamp, row.direction, row.previewOnly, row.originalBytes, fullText)
+        }
+    }
     fun payload(id: Long): String? = readableDatabase.rawQuery("SELECT payload FROM entries WHERE id = ?", arrayOf(id.toString())).use {
         if (it.moveToFirst() && !it.isNull(0)) cipher.decrypt(it.getBlob(0), "payload") else null
     }

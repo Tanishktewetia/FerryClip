@@ -8,7 +8,6 @@ import android.os.PersistableBundle
 import android.os.Build
 
 class ClipboardWriter(context: Context) {
-    private val history = com.clipsync.android.history.ClipboardHistory.get(context)
     private val clipboard = context.getSystemService(ClipboardManager::class.java)
     fun write(text: String) {
         val clip = ClipData.newPlainText("FerryClip", text)
@@ -17,8 +16,7 @@ class ClipboardWriter(context: Context) {
             putBoolean(if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true)
         }
         clipboard.setPrimaryClip(clip)
-        // The locally added sensitive flag only redacts the OS overlay; it is not source metadata.
-        history.record(text, "From PC")
+        // History is recorded from the protocol event, not only when clipboard content changes.
         // No toast, snackbar, notification, or clipboard listener here.
     }
 }

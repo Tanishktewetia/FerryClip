@@ -59,6 +59,22 @@ class ClipboardHistory private constructor(context: Context) {
             }
         } } }
     }
+    /** Records a unique remote clipboard event, even if its text matches the previous clip. */
+    suspend fun recordRemoteEvent(text: String, origin: String, sequence: Long) = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            val settings = preferences.options.first()
+            val saved = db.recordRemoteEvent(text, origin, sequence, settings, System.currentTimeMillis(), sensitive = false)
+            mutableEntries.value = db.list()
+            mutableOptions.value = settings
+            mutableError.value = null
+            saved
+        }
+    }
+
+    suspend fun latestRemoteSequence(origin: String): Long = withContext(Dispatchers.IO) {
+        mutex.withLock { db.latestRemoteSequence(origin) }
+    }
+
     suspend fun payload(id: Long): String? = withContext(Dispatchers.IO) { mutex.withLock {
         db.prune(preferences.options.first(), System.currentTimeMillis())
         mutableEntries.value = db.list()

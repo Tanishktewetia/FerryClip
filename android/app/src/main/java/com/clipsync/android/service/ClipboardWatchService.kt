@@ -196,7 +196,15 @@ class ClipboardWatchService : Service() {
                             SyncRuntime.update { it.copy(address = formatAddress(endpoint), error = null) }
                             updateAggregate(); FileLogger.info("Connected to PC " + selected.displayName + ": TLS 1.3, pinned identity"); applyDeferred()
                         } },
-                        receive = { text -> withContext(Dispatchers.Main) {
+                        receive = { text, origin, sequence ->
+                            check(attempt == peer.generation)
+                            if (origin != null && sequence != null) {
+                                com.clipsync.android.history.ClipboardHistory.get(applicationContext)
+                                    .recordRemoteEvent(text, origin, sequence)
+                            } else {
+                                com.clipsync.android.history.ClipboardHistory.get(applicationContext).record(text, "From PC")
+                            }
+                            withContext(Dispatchers.Main) {
                             check(attempt == peer.generation)
                             if (!peer.device.paused && sharedReceiverConnected) {
                                 val applied = SyncRuntime.receiver.receive(text, keyguard.isKeyguardLocked)
@@ -233,6 +241,10 @@ class ClipboardWatchService : Service() {
     private fun canRecover(peer: PeerSession) = !destroyed && !peer.recoveryBlocked && ClipboardReadStore.isServiceEnabled(this) && peer.device.isActive && !peer.device.paused && hasLocalNetwork()
     private fun recover(reason: String, replaceConnected: Boolean = false) {
         if (destroyed || !ClipboardReadStore.isServiceEnabled(this) || !hasLocalNetwork()) return
+        // A process update/death recreates the foreground service with an empty session map.
+        // Rehydrate persisted trusted and previously active peers before running recovery.
+        val savedDevices = SyncRuntime.state.value.devices
+        RecoveryPolicy.devicesToRestore(savedDevices).forEach { device -> sessionFor(device) }
         sessions.values.toList().forEach { peer ->
             if (!peer.device.isActive || peer.device.paused) return@forEach
             if (peer.connectionJob?.isActive == true && !(replaceConnected && peer.device.connectionState == DeviceState.Connected)) return@forEach

@@ -6,8 +6,8 @@ import java.nio.ByteBuffer
 object SessionProtocol {
     const val PREFIX = "cs7|"
     const val MAX_TEXT = FrameCodec.MAX - 266
-    fun hello(latest: ClipMessage?, replay: Boolean) = ClipMessage(MessageType.HELLO,
-        lamport = latest?.lamport ?: 0, deviceId = "$PREFIX${latest?.deviceId ?: ""}|${if (replay) 1 else 0}")
+    fun hello(latest: ClipMessage?, replay: Boolean, observedClock: Long = latest?.lamport ?: 0) = ClipMessage(MessageType.HELLO,
+        lamport = maxOf(latest?.lamport ?: 0, observedClock), deviceId = "$PREFIX${latest?.deviceId ?: ""}|${if (replay) 1 else 0}")
     fun origin(hello: ClipMessage): String? = hello.deviceId?.takeIf { it.startsWith(PREFIX) }?.split('|')?.takeIf { it.size == 3 }?.get(1)
     fun replay(hello: ClipMessage) = hello.deviceId?.endsWith("|1") == true
     fun newer(a: ClipMessage, clock: Long, origin: String) = a.lamport > clock || (a.lamport == clock && (a.deviceId ?: "") > origin)

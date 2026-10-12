@@ -4,12 +4,16 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.security.KeyStore
 import javax.crypto.Cipher
+import javax.crypto.Mac
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /** Encrypts both previews and complete clips; the key never enters SQLite. */
-internal class HistoryCipher(private val keyProvider: () -> SecretKey = ::historyKey) {
+internal class HistoryCipher(
+    private val keyProvider: () -> SecretKey = ::historyKey,
+    private val fingerprintKeyProvider: () -> SecretKey = ::historyFingerprintKey,
+) {
     fun encrypt(text: String, field: String): ByteArray {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, keyProvider())
@@ -24,6 +28,11 @@ internal class HistoryCipher(private val keyProvider: () -> SecretKey = ::histor
         // Authentication failures propagate; never display ciphertext or fall back to plaintext.
         return cipher.doFinal(encoded.copyOfRange(13, encoded.size)).toString(Charsets.UTF_8)
     }
+    /** Stable keyed fingerprint; plaintext-derived hashes are never stored in SQLite. */
+    fun fingerprint(text: String): String = Mac.getInstance("HmacSHA256").run {
+        init(fingerprintKeyProvider())
+        doFinal(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+    }
 }
 
 @Synchronized
@@ -36,6 +45,22 @@ private fun historyKey(): SecretKey {
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setKeySize(256).build())
+            generateKey()
+        }
+    }
+    return store.getKey(alias, null) as SecretKey
+}
+
+@Synchronized
+private fun historyFingerprintKey(): SecretKey {
+    val alias = "ferryclip_history_dedupe_hmac_v1"
+    val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+    if (!store.containsAlias(alias)) {
+        KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, "AndroidKeyStore").apply {
+            init(KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY)
+                .setDigests(KeyProperties.DIGEST_SHA256)
+                .setKeySize(256)
+                .build())
             generateKey()
         }
     }

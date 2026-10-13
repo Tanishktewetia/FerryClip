@@ -37,19 +37,18 @@ Release availability and signing status are shown on the release page. The curre
 Requirements from the project configuration: **.NET 10 SDK**, **JDK 17**, **Android SDK Platform 34**, and PowerShell on Windows. Gradle Wrapper 8.11.1 and Android Gradle Plugin 8.7.3 are configured in the repository. Node.js is only needed for the static website.
 
 ```powershell
-# Build the Windows self-contained x64 app and Android release APK
-.\scripts\build-windows.ps1
-.\scripts\build-android.ps1
+# Build the Windows exe, portable ZIP, and Inno Setup installer
+.\scripts\build-windows-installer.ps1
 
-# Optional: create the compact Windows installer package
-.\scripts\build-windows-download.ps1
+# Build the Android release APK (requires the local release signing key)
+.\scripts\build-android.ps1
 
 # Optional: build and preview the static website
 node site/build.cjs
 node site/serve.cjs
 ```
 
-Build artifacts are placed in `dist/`. The Windows executable is self-contained and does not require a separate .NET installation. The compact installer package is framework-dependent and can bootstrap the .NET 10 Desktop Runtime. The Android release APK uses the debug signing configuration until release signing is configured.
+Build artifacts are placed in `dist/`. The Windows executable is self-contained; the Inno Setup installer and portable ZIP bundle it. Android release APKs are built and signed locally; CI assembles debug APKs only.
 
 ## Privacy and troubleshooting
 

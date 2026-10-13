@@ -2,7 +2,15 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>0.8.16.0</Version>
+    <Version>1.0.0</Version>
+    <FileVersion>$(Version)</FileVersion>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Product>FerryClip</Product>
+    <Company>Tanishk Tewetia</Company>
+    <Copyright>Copyright (c) 2026 Tanishk Tewetia</Copyright>
+    <Description>Secure local-network clipboard sync between Windows and Android.</Description>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

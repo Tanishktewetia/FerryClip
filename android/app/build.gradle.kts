@@ -1,7 +1,56 @@
+import java.util.Properties
+import org.gradle.api.GradleException
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+val releaseSigningPropertiesFile = rootProject.file("keystore.properties")
+val releaseSigningProperties = Properties()
+val releaseSigningRequested = gradle.startParameter.taskNames.any { requestedTask ->
+    val taskName = requestedTask.substringAfterLast(':')
+    taskName.contains("Release", ignoreCase = true) ||
+        taskName.equals("build", ignoreCase = true) ||
+        taskName.equals("assemble", ignoreCase = true)
+}
+var releaseSigningPropertiesLoadFailed = false
+if (releaseSigningRequested && releaseSigningPropertiesFile.isFile) {
+    try {
+        releaseSigningPropertiesFile.inputStream().use(releaseSigningProperties::load)
+    } catch (_: Exception) {
+        releaseSigningPropertiesLoadFailed = true
+    }
+}
+val releaseStoreFile = releaseSigningProperties.getProperty("storeFile")
+val releaseStorePassword = releaseSigningProperties.getProperty("storePassword")
+val releaseKeyAlias = releaseSigningProperties.getProperty("keyAlias")
+val releaseKeyPassword = releaseSigningProperties.getProperty("keyPassword")
+val releaseSigningConfigured = releaseSigningPropertiesFile.isFile &&
+    !releaseSigningPropertiesLoadFailed &&
+    listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { !it.isNullOrBlank() }
+
+val verifyReleaseSigningConfig = tasks.register("verifyReleaseSigningConfig") {
+    doLast {
+        if (!releaseSigningPropertiesFile.isFile) {
+            throw GradleException("Release signing requires android/keystore.properties. Copy android/keystore.properties.example to android/keystore.properties and set the local signing values.")
+        }
+        if (releaseSigningPropertiesLoadFailed) {
+            throw GradleException("android/keystore.properties could not be loaded. Check its properties-file format without sharing its contents.")
+        }
+        if (!releaseSigningConfigured) {
+            throw GradleException("android/keystore.properties must define storeFile, storePassword, keyAlias, and keyPassword.")
+        }
+        if (!rootProject.file(releaseStoreFile!!).isFile) {
+            throw GradleException("The release keystore configured by android/keystore.properties was not found.")
+        }
+    }
+}
+tasks.configureEach {
+    if (name == "preReleaseBuild") {
+        dependsOn(verifyReleaseSigningConfig)
+    }
 }
 
 android {
@@ -13,10 +62,21 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = 22
-        versionName = "0.8.16"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += "en"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -27,7 +87,7 @@ android {
             buildConfigField("boolean", "DIAGNOSTICS_ENABLED", "false")
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (releaseSigningConfigured) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

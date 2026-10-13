@@ -9,7 +9,7 @@ if (-not (Test-Path $gradlew)) {
     exit 1
 }
 
-Write-Host "Building FerryClip Android beta APK..." -ForegroundColor Cyan
+Write-Host "Building FerryClip signed Android release APK..." -ForegroundColor Cyan
 Push-Location $androidDir
 try {
     & .\gradlew.bat assembleRelease
@@ -39,12 +39,21 @@ if (Test-Path $apkSource) {
         }
     }
 
-    $destName = "FerryClip-beta-$version.apk"
+    $destName = "FerryClip-$version.apk"
     $dest = Join-Path $distDir $destName
-    Copy-Item $apkSource $dest -Force
+    if (Test-Path -LiteralPath $dest) {
+        $sourceHash = (Get-FileHash -LiteralPath $apkSource -Algorithm SHA256).Hash
+        $existingHash = (Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash
+        if ($sourceHash -ne $existingHash) {
+            throw "Refusing to overwrite an existing release APK: $dest"
+        }
+        Write-Host "Existing release APK matches the build; leaving it unchanged." -ForegroundColor Gray
+    } else {
+        Copy-Item -LiteralPath $apkSource -Destination $dest
+    }
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "..\LICENSE") -Destination (Join-Path $distDir "LICENSE") -Force
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "..\THIRD_PARTY_NOTICES.md") -Destination (Join-Path $distDir "THIRD_PARTY_NOTICES.md") -Force
-    Write-Host "APK copied to: $dest" -ForegroundColor Green
+    Write-Host "Release APK ready at: $dest" -ForegroundColor Green
     Write-Host "File size: $([math]::Round((Get-Item $dest).Length / 1MB, 2)) MB" -ForegroundColor Gray
 } else {
     Write-Warning "APK not found at expected path: $apkSource"

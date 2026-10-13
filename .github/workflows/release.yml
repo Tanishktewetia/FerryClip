@@ -1,0 +1,180 @@
+name: Windows Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-build:
+    name: Build Windows executable from source
+    runs-on: windows-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify version and tag
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content -LiteralPath 'windows/ClipSync.Windows/ClipSync.Windows.csproj' -Raw
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Windows csproj is missing its Version property.' }
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $tag = $env:GITHUB_REF_NAME
+            if (-not $tag.StartsWith('v')) { throw "Expected a v-prefixed release tag, got '$tag'." }
+            $tagVersion = $tag.Substring(1)
+            if ($tagVersion -cne $version) {
+              throw "Release tag '$tag' does not match Windows csproj version '$version'."
+            }
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Build self-contained Windows executable
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -ExeOnly
+
+      # FUTURE SIGNPATH PLACEHOLDER (EXE): insert the approved CI signing step after source build
+      # and before packaging. No signing action, certificate, or secret is configured today.
+
+      - name: Upload executable for packaging job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: FerryClip-windows-exe
+          path: dist/FerryClip-win-x64.exe
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+  windows-package:
+    name: Package portable ZIP and installer
+    needs: windows-build
+    runs-on: windows-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ needs.windows-build.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download source-built executable
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: FerryClip-windows-exe
+          path: dist
+
+      - name: Ensure Inno Setup compiler is available
+        shell: pwsh
+        run: |
+          $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) {
+            $candidates = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe")
+            $iscc = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          }
+          if (-not $iscc) {
+            if (-not (Get-Command choco.exe -ErrorAction SilentlyContinue)) { throw 'Inno Setup is missing and Chocolatey is unavailable for a headless install.' }
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "Headless Inno Setup installation failed with exit code $LASTEXITCODE." }
+            $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+            if (-not $iscc) {
+              $iscc = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+            }
+          }
+          if (-not $iscc) { throw 'Inno Setup installation completed, but ISCC.exe was not found.' }
+          Write-Host 'Inno Setup compiler is ready.'
+
+
+      - name: Build portable ZIP from the executable
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -PortableOnly
+
+      - name: Compile installer from the same executable
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ needs.windows-build.outputs.version }}
+        run: ./scripts/build-windows-installer.ps1 -InstallerOnly -SourceExe "$PWD\dist\FerryClip-win-x64.exe" -Version $env:APP_VERSION
+
+      # FUTURE SIGNPATH PLACEHOLDER (INSTALLER): sign dist/FerryClip-Windows-Setup.exe here.
+
+      - name: Create Windows checksums
+        shell: pwsh
+        run: |
+          $names = @('FerryClip-Windows-Setup.exe', 'FerryClip-Windows-Portable.zip')
+          $lines = foreach ($name in $names) {
+            $path = Join-Path 'dist' $name
+            if (-not (Test-Path -LiteralPath $path)) { throw "Expected release asset is missing: $path" }
+            $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          Set-Content -LiteralPath 'dist/SHA256SUMS-windows.txt' -Value $lines -Encoding ascii
+
+      - name: Upload Windows build outputs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: FerryClip-windows-release-assets
+          path: |
+            dist/FerryClip-win-x64.exe
+            dist/FerryClip-Windows-Setup.exe
+            dist/FerryClip-Windows-Portable.zip
+            dist/SHA256SUMS-windows.txt
+            dist/LICENSE
+            dist/THIRD_PARTY_NOTICES.md
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  draft-release:
+    name: Create draft GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: windows-package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release notes template
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download Windows release assets
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: FerryClip-windows-release-assets
+          path: release-assets
+
+      - name: Create draft release (tag pushes only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.windows-package.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            release-assets/FerryClip-Windows-Setup.exe \
+            release-assets/FerryClip-Windows-Portable.zip \
+            release-assets/SHA256SUMS-windows.txt \
+            --draft \
+            --title "FerryClip $RELEASE_VERSION" \
+            --notes-file .github/release-notes-template.md

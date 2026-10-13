@@ -51,11 +51,15 @@ LOG.md
 # Automated test reports and generated identities remain local
 TestResults/
 
-# Keep local notes and phase reports out of Git; publish only the root README
+# Keep local notes and phase reports out of Git; whitelist release documentation
 *.md
 !/README.md
 !/THIRD_PARTY_NOTICES.md
+!/.github/release-notes-template.md
 /docs/
+!/docs/
+/docs/*
+!/docs/RELEASING.md
 
 # Test sources and preview/verification fixtures stay local
 /core-spec/

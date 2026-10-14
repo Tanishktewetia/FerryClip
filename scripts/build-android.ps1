@@ -1,4 +1,4 @@
-# build-android.ps1 — Build an optimized, installable beta APK and copy it to dist/
+# build-android.ps1 — Build the signed Android release APK and copy release assets to dist/
 $ErrorActionPreference = "Stop"
 
 $androidDir = Join-Path $PSScriptRoot "..\android"
@@ -51,9 +51,12 @@ if (Test-Path $apkSource) {
     } else {
         Copy-Item -LiteralPath $apkSource -Destination $dest
     }
+    $latestDest = Join-Path $distDir "FerryClip-Android.apk"
+    Copy-Item -LiteralPath $apkSource -Destination $latestDest -Force
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "..\LICENSE") -Destination (Join-Path $distDir "LICENSE") -Force
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "..\THIRD_PARTY_NOTICES.md") -Destination (Join-Path $distDir "THIRD_PARTY_NOTICES.md") -Force
-    Write-Host "Release APK ready at: $dest" -ForegroundColor Green
+    Write-Host "Versioned release APK ready at: $dest" -ForegroundColor Green
+    Write-Host "Fixed-name release APK ready at: $latestDest" -ForegroundColor Green
     Write-Host "File size: $([math]::Round((Get-Item $dest).Length / 1MB, 2)) MB" -ForegroundColor Gray
 } else {
     Write-Warning "APK not found at expected path: $apkSource"

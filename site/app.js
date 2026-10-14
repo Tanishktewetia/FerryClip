@@ -43,12 +43,9 @@
   document.querySelectorAll('.apk-download,.windows-download').forEach(link => link.addEventListener('click', () => {
     const windows = link.classList.contains('windows-download');
     document.querySelectorAll('.download-status').forEach(status => { status.textContent = windows
-        ? 'Windows EXE download requested. Verify its checksum, quit any older copy, then run FerryClip.'
-        : 'Android APK download requested. Open it from Downloads and follow the sideloading guide.'; });
+        ? 'Windows installer download requested. Review the unsigned-binary warning and verify the checksum before running.'
+        : 'Android APK download requested. Open it from Downloads and allow installing unknown apps if Android asks.'; });
   }));
-  const checksum = document.querySelector('[data-checksum]');
-  if (checksum) fetch('downloads/SHA256SUMS.txt').then(r => { if (!r.ok) throw new Error('Unavailable'); return r.text(); })
-    .then(text => { checksum.textContent = text.trim(); }).catch(() => { checksum.textContent = 'Checksum unavailable. Use SHA256SUMS.txt included with this build.'; });
 
   const docSidebar = document.querySelector('.docs-sidebar');
   if (docSidebar) {

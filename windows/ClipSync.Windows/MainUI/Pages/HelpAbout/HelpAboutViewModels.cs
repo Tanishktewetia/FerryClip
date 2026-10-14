@@ -14,7 +14,7 @@ public sealed class HelpPageViewModel:ObservableObject,IDisposable
  public HelpPageViewModel(ShellViewModel shell)
  {
   this.shell=shell;shell.App.PropertyChanged+=AppChanged;WebsiteCommand=new RelayCommand(()=>Open(Site));GitHubCommand=new RelayCommand(()=>Open(GitHub));ReportCommand=new RelayCommand(()=>Open(GitHub+"/issues"));
-  CopyAppInfoCommand=new RelayCommand(CopyAppInfo);TroubleCommand=new RelayCommand(()=>TroubleExpanded=!TroubleExpanded);
+  CopyAppInfoCommand=new RelayCommand(CopyAppInfo);WelcomeGuideCommand=new RelayCommand(()=>shell.App.ShowWelcomeGuide());TroubleCommand=new RelayCommand(()=>TroubleExpanded=!TroubleExpanded);
   Resources=new(){
    new("Quick start","Install and connect in minutes",G("M5,2 L15,2 L20,7 L20,22 L5,22 Z M15,2 L15,7 L20,7 M8,12 L17,12 M8,16 L17,16"),Docs+"#install",shell),
    new("Pairing your phone","Connect with a six-digit code",G("M7,2 L17,2 L17,22 L7,22 Z M10,5 L14,5 M11,19 L13,19 M3,7 L3,17 M21,7 L21,17"),Docs+"#setup",shell),
@@ -31,7 +31,7 @@ public sealed class HelpPageViewModel:ObservableObject,IDisposable
  }
  public ObservableCollection<DocumentationLinkViewModel> Resources{get;}
  public ObservableCollection<TroubleshootingStepViewModel> TroubleshootingSteps{get;}
- public ICommand WebsiteCommand{get;}public ICommand GitHubCommand{get;}public ICommand ReportCommand{get;}public ICommand CopyAppInfoCommand{get;}public ICommand TroubleCommand{get;}
+ public ICommand WebsiteCommand{get;}public ICommand GitHubCommand{get;}public ICommand ReportCommand{get;}public ICommand CopyAppInfoCommand{get;}public ICommand WelcomeGuideCommand{get;}public ICommand TroubleCommand{get;}
  public string Version=>shell.App.Version;public string Footer=>$"FerryClip v{Version} - ferryclip.app";
  public bool IsConnected=>shell.App.State==ClipSync.Windows.MainUI.Models.ConnectionState.Connected;
  public bool IsWarning=>shell.App.State is ClipSync.Windows.MainUI.Models.ConnectionState.Unreachable or ClipSync.Windows.MainUI.Models.ConnectionState.NoDevices;

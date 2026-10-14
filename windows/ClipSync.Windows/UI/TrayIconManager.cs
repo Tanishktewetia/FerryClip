@@ -12,34 +12,29 @@ namespace ClipSync.Windows.UI;
 public sealed class TrayIconManager : IDisposable
 {
     private readonly NotifyIcon _notifyIcon;
-    private readonly StatusWindow _statusWindow;
+    private readonly MainUI.Services.AppState _state; private readonly Action _open; private readonly Action _pair; private readonly Action _pause;
     private readonly System.Windows.Controls.ContextMenu _menu;
     private readonly System.Windows.Controls.MenuItem _pauseItem;
-    private bool _hideOnClick;
+
     private System.Drawing.Point _openedAt;
     private IntPtr _menuHandle;
     private bool _menuHadForeground;
     private System.Windows.Interop.HwndSource? _menuOwner;
     private readonly System.Windows.Threading.DispatcherTimer _dismissTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
 
-    public TrayIconManager(StatusWindow statusWindow)
+    public TrayIconManager(MainUI.Services.AppState state,Action open,Action pair,Action pause)
     {
-        _statusWindow = statusWindow;
+        _state=state;_open=open;_pair=pair;_pause=pause;
         _menu = new System.Windows.Controls.ContextMenu
         {
             Style = (Style)WpfApplication.Current.FindResource("TrayMenuStyle"),
             Placement = PlacementMode.AbsolutePoint
         };
-        AddItem("Open FerryClip", DesktopActions.OpenFerryClip, "\uE8A7").FontWeight = FontWeights.SemiBold;
-        AddItem("Show status", () => _statusWindow.ShowPopover(), "\uE946");
-        _pauseItem = AddItem("Pause sync", () => _statusWindow.PauseRequested?.Invoke(), "\uE769", startsGroup: true);
-        AddItem("Pair new device", () => _statusWindow.ShowPairing(), "\uE710");
-#if DEBUG
-        AddItem("Open log folder", DesktopActions.OpenLogFolder, "\uE838", startsGroup: true);
-        var quit = AddItem("Quit FerryClip", () => WpfApplication.Current.Shutdown(), "\uE7E8");
-#else
-        var quit = AddItem("Quit FerryClip", () => WpfApplication.Current.Shutdown(), "\uE7E8", startsGroup: true);
-#endif
+        AddItem("Open FerryClip",_open,"\uE8A7").FontWeight=FontWeights.SemiBold;
+        _pauseItem=AddItem("Pause sync",_pause,"\uE769");
+        AddItem("Pair new device",_pair,"\uE710");
+        _menu.Items.Add(new System.Windows.Controls.Separator());
+        var quit=AddItem("Quit FerryClip",()=>WpfApplication.Current.Shutdown(),"\uE7E8");
         quit.Tag = "Destructive";
         _menu.StaysOpen = false;
         _menu.Opened += (_, _) => PositionAndActivateMenu();
@@ -59,9 +54,9 @@ public sealed class TrayIconManager : IDisposable
             if (_menuHandle != IntPtr.Zero && (outsideClick || (_menuHadForeground && !ownsForeground && !IsChild(_menuHandle, foreground)))) _menu.IsOpen = false;
         };
         _notifyIcon = new NotifyIcon { Text = "FerryClip", Visible = true, Icon = CreateTrayIcon("No devices paired") };
-        _notifyIcon.MouseDown += OnMouseDown;
         _notifyIcon.MouseUp += OnMouseUp;
-        _statusWindow.StatusChanged += UpdateState;
+        _notifyIcon.MouseDoubleClick += (_,e)=>{if(e.Button==MouseButtons.Left)_open();};
+        _state.PropertyChanged += StateChanged;
         UpdateState();
         FileLogger.Instance.Info("Tray icon created");
     }
@@ -74,35 +69,14 @@ public sealed class TrayIconManager : IDisposable
         return item;
     }
 
-    private void OnMouseDown(object? sender, MouseEventArgs e)
-    {
-        if (e.Button == MouseButtons.Left)
-            _hideOnClick = _statusWindow.IsPopoverRequested || _statusWindow.WasJustDeactivated;
-    }
-
     private void OnMouseUp(object? sender, MouseEventArgs e)
     {
-        var cursor = Cursor.Position;
-        _statusWindow.Dispatcher.BeginInvoke(new Action(() =>
-        {
-            if (e.Button == MouseButtons.Left)
-            {
-                _menu.IsOpen = false;
-                if (_hideOnClick) _statusWindow.HidePopover(); else _statusWindow.ShowPopover();
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                _statusWindow.HidePopover();
-                if (_menu.IsOpen) { _menu.IsOpen = false; return; }
-                _openedAt = cursor;
-                _menu.Tag = null;
-                // Seed WPF placement in DIPs; final positioning below uses the popup's own DPI.
-                _menu.HorizontalOffset = cursor.X / (_statusWindow.IsLoaded ? System.Windows.Media.VisualTreeHelper.GetDpi(_statusWindow).DpiScaleX : 1);
-                _menu.VerticalOffset = cursor.Y / (_statusWindow.IsLoaded ? System.Windows.Media.VisualTreeHelper.GetDpi(_statusWindow).DpiScaleY : 1);                OpenMenu();
-            }
-        }), System.Windows.Threading.DispatcherPriority.ContextIdle);
+        var cursor=Cursor.Position;
+        WpfApplication.Current.Dispatcher.BeginInvoke(new Action(()=>{
+            if(e.Button==MouseButtons.Left){_menu.IsOpen=false;_open();}
+            else if(e.Button==MouseButtons.Right){if(_menu.IsOpen){_menu.IsOpen=false;return;}_openedAt=cursor;_menu.Tag=null;_menu.HorizontalOffset=cursor.X;_menu.VerticalOffset=cursor.Y;OpenMenu();}
+        }),System.Windows.Threading.DispatcherPriority.ContextIdle);
     }
-
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hwnd, int command);
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern short GetAsyncKeyState(int key);
     private void OpenMenu()
@@ -175,11 +149,13 @@ public sealed class TrayIconManager : IDisposable
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern bool DestroyIcon(IntPtr handle);
     private string? _iconState;
+    private string TrayState=>_state.State switch {MainUI.Models.ConnectionState.Connected=>"Connected",MainUI.Models.ConnectionState.Paused=>"Paused",MainUI.Models.ConnectionState.Unreachable=>"Not connected",_=>"No devices paired"};
+    private void StateChanged(object? sender,System.ComponentModel.PropertyChangedEventArgs e){if(e.PropertyName is "State" or "Devices" or "IsPaused")UpdateState();}
     private void UpdateState()
     {
-        var state=_statusWindow.State;
-        var count=_statusWindow.ConnectedCount;
-        _notifyIcon.Text=state=="Connected" ? $"FerryClip · Connected · {count} {(count==1?"device":"devices")}" : $"FerryClip · {state}";
+        var state=TrayState;
+        var count=_state.Devices.Count(d=>d.Connected);
+        var tip=state=="Connected" ? $"FerryClip - Connected, {count} {(count==1?"device":"devices")}" : $"FerryClip - {state}";_notifyIcon.Text=tip.Length>127?tip[..127]:tip;
         var pause=_pauseItem;pause.Header=state=="Paused"?"Resume sync":"Pause sync";
         ((System.Windows.Controls.TextBlock)pause.Icon).Text=state=="Paused"?"\uE768":"\uE769";
         if(_iconState!=state) { var old=_notifyIcon.Icon;
@@ -196,14 +172,13 @@ public sealed class TrayIconManager : IDisposable
     public void ShowNotice(string message) => _notifyIcon.ShowBalloonTip(5000, "FerryClip", message, ToolTipIcon.Info);
     public void Dispose()
     {
-        _statusWindow.StatusChanged -= UpdateState;
+        _state.PropertyChanged -= StateChanged;
         _dismissTimer.Stop();
         _menu.IsOpen = false;
         _notifyIcon.Visible = false;
-        _notifyIcon.MouseDown -= OnMouseDown;
         _notifyIcon.MouseUp -= OnMouseUp;
         _notifyIcon.Icon?.Dispose();
         _notifyIcon.Dispose();
-        _statusWindow.CloseForExit();
+
     }
 }

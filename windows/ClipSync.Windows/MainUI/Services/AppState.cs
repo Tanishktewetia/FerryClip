@@ -66,6 +66,9 @@ public sealed class AppState : ObservableObject, IDisposable
  void CheckHistoryError(){if(history.Error is {} error)throw new InvalidOperationException(error);}
  public void UpdateSettings(UserSettings settings){SettingsStore.Validate(settings);store?.Save("settings.json",settings);Settings=settings;history.Configure(settings.Policy);Raise(nameof(Settings));}
  public void SetStartup(bool enabled){backend.SetStartup(enabled);Raise(nameof(StartupEnabled));}
+ public Action? WelcomeGuideRequested {get;set;}
+ public void ShowWelcomeGuide()=>WelcomeGuideRequested?.Invoke();
+ public void CompleteOnboarding(){if(Settings.OnboardingCompleted)return;UpdateSettings(Settings with {OnboardingCompleted=true});}
  public void Report(Exception ex)=>ActionFailed?.Invoke(ex);
  public void Dispose(){disposed=true;Interlocked.Increment(ref historyRevision);backend.Changed-=OnChanged;history.Changed-=HistoryChanged;backend.Dispose();}
 }

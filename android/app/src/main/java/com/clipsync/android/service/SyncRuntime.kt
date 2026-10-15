@@ -16,6 +16,7 @@ data class SyncUiState(
     val waitingPairs: Int = 0,
     val pairingMessage: String? = null,
     val pairingFailed: Boolean = false,
+    val pairingCompleteRevision: Long = 0,
     val networkLabel: String = "Wi-Fi",
     val running: Boolean = false,
     val connected: Boolean = false,

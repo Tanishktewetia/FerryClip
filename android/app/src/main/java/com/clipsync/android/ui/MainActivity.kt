@@ -62,7 +62,6 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         settings = SyncSettings(this)
         ClipboardReadStore.initialize(this)
         SyncRuntime.initialize(this)
@@ -83,6 +82,10 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val tileDismissed = remember(revision) { settings.tileDismissed }
             val history = remember { com.clipsync.android.history.ClipboardHistory.get(this) }
             val historyOptions by history.options.collectAsState()
+            SideEffect {
+                if (historyOptions?.allowScreenshots != true) window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            }
             LaunchedEffect(historyOptions?.enabled, activityResumed, authenticated) { captureFocusedClipboard() }
             val historyError by history.error.collectAsState()
             val locked = historyOptions == null || (historyOptions?.appLock == true && !authenticated)

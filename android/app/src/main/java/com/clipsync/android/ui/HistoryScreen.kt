@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.*
@@ -214,7 +215,10 @@ internal fun HistoryScreen(onBack: () -> Unit) {
                                                 Toast.makeText(context, "Could not copy this clip", Toast.LENGTH_SHORT).show()
                                             }
                                         }
-                                    }, onDelete = { history.delete(entry.id) })
+                                    }, onDelete = { history.delete(entry.id) }, onPin = {
+                                        history.setPinned(entry.id, !entry.pinned)
+                                        Toast.makeText(context, if (entry.pinned) "Clip unpinned" else "Clip pinned", Toast.LENGTH_SHORT).show()
+                                    })
                                 }
                             }
                         }
@@ -229,7 +233,23 @@ internal fun HistoryScreen(onBack: () -> Unit) {
         title = { Text("Clear clipboard history?") },
         text = { Text("All ${entries.size} saved ${if (entries.size == 1) "item" else "items"} will be deleted from this phone. This cannot be undone.") },
         confirmButton = {
-            TextButton(onClick = { history.clear(); confirmClear = false }) {
+            TextButton(onClick = {
+                scope.launch {
+                    try {
+                        val currentClipboardText = runCatching {
+                            context.getSystemService(android.content.ClipboardManager::class.java)
+                                .primaryClip?.let { clip ->
+                                    if (clip.itemCount > 0) clip.getItemAt(0).text?.toString() else null
+                                }
+                        }.getOrNull()
+                        history.clear(suppressLocalText = currentClipboardText)
+                        confirmClear = false
+                        Toast.makeText(context, "History cleared", Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Could not clear history", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }) {
                 Text("Clear history", color = MaterialTheme.colorScheme.error)
             }
         },
@@ -248,7 +268,7 @@ private fun RowScope.HistoryFilterChip(label: String, count: Int, selected: Bool
 }
 
 @Composable
-private fun HistoryEntryCard(entry: HistoryEntry, onCopy: () -> Unit, onDelete: () -> Unit) {
+private fun HistoryEntryCard(entry: HistoryEntry, onCopy: () -> Unit, onDelete: () -> Unit, onPin: () -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -260,8 +280,14 @@ private fun HistoryEntryCard(entry: HistoryEntry, onCopy: () -> Unit, onDelete: 
                 Text(entry.preview, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(entry.direction + " · " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(entry.timestamp)),
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (entry.pinned) Text("Pinned", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary)
                 if (entry.previewOnly) Text("Preview only · clip exceeds 1 MB", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            IconButton(onClick = onPin) {
+                Icon(Icons.Outlined.PushPin, if (entry.pinned) "Unpin entry" else "Pin entry",
+                    tint = if (entry.pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             TextButton(onClick = onCopy, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("Copy") }
             IconButton(onClick = onDelete) { Icon(Icons.Outlined.DeleteOutline, "Delete entry") }

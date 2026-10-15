@@ -7,9 +7,10 @@ import android.database.sqlite.SQLiteOpenHelper
 
 /** List queries never load the full clipboard payload into Compose. */
 data class HistoryEntry(val id: Long, val preview: String, val timestamp: Long,
-    val direction: String, val previewOnly: Boolean, val originalBytes: Int, val searchableText: String)
+    val direction: String, val previewOnly: Boolean, val originalBytes: Int, val searchableText: String,
+    val pinned: Boolean = false)
 
-internal class HistoryDatabase(context: Context, private val cipher: HistoryCipher = HistoryCipher()) : SQLiteOpenHelper(context, "clipboard_history.db", null, 4) {
+internal class HistoryDatabase(context: Context, private val cipher: HistoryCipher = HistoryCipher()) : SQLiteOpenHelper(context, "clipboard_history.db", null, 5) {
     private var compactAfterMigration = false
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -20,7 +21,8 @@ internal class HistoryDatabase(context: Context, private val cipher: HistoryCiph
         db.execSQL("""CREATE TABLE entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT, preview BLOB NOT NULL, payload BLOB,
             created INTEGER NOT NULL, direction TEXT NOT NULL, original_bytes INTEGER NOT NULL,
-            stored_bytes INTEGER NOT NULL, event_id TEXT, content_hash TEXT)""")
+            stored_bytes INTEGER NOT NULL, event_id TEXT, content_hash TEXT,
+            pinned INTEGER NOT NULL DEFAULT 0)""")
         db.execSQL("CREATE TABLE source_cursors (origin TEXT PRIMARY KEY NOT NULL, sequence INTEGER NOT NULL)")
         db.execSQL("CREATE UNIQUE INDEX entries_event_id ON entries(event_id)")
         db.execSQL("CREATE INDEX entries_created ON entries(created, id)")
@@ -63,6 +65,7 @@ internal class HistoryDatabase(context: Context, private val cipher: HistoryCiph
             }
             duplicateIds.forEach { id -> db.delete("entries", "id = ?", arrayOf(id.toString())) }
         }
+        if (oldVersion < 5) db.execSQL("ALTER TABLE entries ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
     }
     override fun onOpen(db: SQLiteDatabase) {
         super.onOpen(db)
@@ -137,36 +140,40 @@ internal class HistoryDatabase(context: Context, private val cipher: HistoryCiph
     }
     fun prune(options: HistoryOptions, now: Long) {
         val db = writableDatabase
-        if (options.retentionHours > 0) db.delete("entries", "created <= ?",
+        if (options.retentionHours > 0) db.delete("entries", "created <= ? AND pinned = 0",
             arrayOf((now - options.retentionHours * 3600000L).toString()))
-        db.execSQL("DELETE FROM entries WHERE id NOT IN (SELECT id FROM entries ORDER BY created DESC, id DESC LIMIT ?)", arrayOf(options.limit))
+        db.execSQL("DELETE FROM entries WHERE pinned = 0 AND id NOT IN (SELECT id FROM entries WHERE pinned = 0 ORDER BY created DESC, id DESC LIMIT ?)", arrayOf(options.limit))
         val oldest = mutableListOf<Pair<Long, Long>>()
-        db.rawQuery("SELECT id, stored_bytes FROM entries ORDER BY created ASC, id ASC", null).use { c ->
+        db.rawQuery("SELECT id, stored_bytes FROM entries WHERE pinned = 0 ORDER BY created ASC, id ASC", null).use { c ->
             while (c.moveToNext()) oldest += c.getLong(0) to c.getLong(1)
         }
         HistoryStoragePolicy.evictions(oldest).forEach { db.delete("entries", "id = ?", arrayOf(it.toString())) }
     }
     private data class EntryMetadata(val id: Long, val preview: String, val timestamp: Long,
-        val direction: String, val previewOnly: Boolean, val originalBytes: Int)
+        val direction: String, val previewOnly: Boolean, val originalBytes: Int, val pinned: Boolean)
 
     fun list(): List<HistoryEntry> {
         // Read payloads individually after closing the metadata cursor: a single cursor window
         // must not hold many large encrypted clips at once.
         val metadata = readableDatabase.rawQuery(
-            "SELECT id, preview, created, direction, payload IS NULL, original_bytes FROM entries ORDER BY created DESC, id DESC", null
+            "SELECT id, preview, created, direction, payload IS NULL, original_bytes, pinned FROM entries ORDER BY created DESC, id DESC", null
         ).use { c -> buildList {
             while (c.moveToNext()) add(EntryMetadata(c.getLong(0), cipher.decrypt(c.getBlob(1), "preview"),
-                c.getLong(2), c.getString(3), c.getInt(4) != 0, c.getInt(5)))
+                c.getLong(2), c.getString(3), c.getInt(4) != 0, c.getInt(5), c.getInt(6) != 0))
         } }
         return metadata.map { row ->
             val fullText = if (row.previewOnly) row.preview else payload(row.id) ?: row.preview
-            HistoryEntry(row.id, row.preview, row.timestamp, row.direction, row.previewOnly, row.originalBytes, fullText)
+            HistoryEntry(row.id, row.preview, row.timestamp, row.direction, row.previewOnly, row.originalBytes, fullText, row.pinned)
         }
     }
     fun payload(id: Long): String? = readableDatabase.rawQuery("SELECT payload FROM entries WHERE id = ?", arrayOf(id.toString())).use {
         if (it.moveToFirst() && !it.isNull(0)) cipher.decrypt(it.getBlob(0), "payload") else null
     }
     fun delete(id: Long) { writableDatabase.delete("entries", "id = ?", arrayOf(id.toString())) }
+    fun setPinned(id: Long, pinned: Boolean) {
+        writableDatabase.update("entries", ContentValues().apply { put("pinned", if (pinned) 1 else 0) },
+            "id = ?", arrayOf(id.toString()))
+    }
     fun clear() { writableDatabase.delete("entries", null, null); writableDatabase.execSQL("VACUUM") }
 }
 

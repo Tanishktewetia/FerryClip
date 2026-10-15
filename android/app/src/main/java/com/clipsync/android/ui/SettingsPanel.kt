@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun SettingsPanel(
@@ -38,6 +39,7 @@ internal fun SettingsPanel(
     onSaveLogs: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val history = remember { com.clipsync.android.history.ClipboardHistory.get(context) }
     val options by history.options.collectAsState()
     var dialog by remember { mutableStateOf<String?>(null) }
@@ -53,6 +55,8 @@ internal fun SettingsPanel(
             }
             SettingsSection("PRIVACY & SECURITY") {
                 SettingsToggleRow(Icons.Outlined.Shield, "Skip sensitive clips", "Don't save Android-flagged passwords and OTPs", current.skipSensitive) { history.update { o -> o.copy(skipSensitive = it) } }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsToggleRow(Icons.Outlined.PhotoCamera, "Allow screenshots", "Let Android capture FerryClip screens", current.allowScreenshots) { enabled -> history.update { it.copy(allowScreenshots = enabled) } }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsToggleRow(Icons.Outlined.Fingerprint, "Lock app with fingerprint/PIN", "Authenticate whenever you return to FerryClip", current.appLock) { enabled ->
                     (context as? MainActivity)?.changeAppLock(enabled)
@@ -102,7 +106,9 @@ internal fun SettingsPanel(
                     }
                 }
             }, confirmButton = {
-                if (kind == "clear") TextButton(onClick = { history.clear(); dialog = null }) { Text("Delete all", color = MaterialTheme.colorScheme.error) }
+                if (kind == "clear") TextButton(onClick = {
+                    scope.launch { history.clear(); dialog = null }
+                }) { Text("Delete all", color = MaterialTheme.colorScheme.error) }
             }, dismissButton = { TextButton(onClick = { dialog = null }) { Text("Cancel") } })
     }
 }

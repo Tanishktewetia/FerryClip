@@ -14,6 +14,7 @@ class ClipboardHistory private constructor(context: Context) {
     private val mutex = Mutex()
     private var lastRecordedHash: String? = null
     private var lastRecordedDirection: String? = null
+    private val clearRecaptureGuard = LocalHistoryClearGuard()
     private val preferences = HistoryPreferences(app)
     private val db = HistoryDatabase(app)
     private val mutableOptions = MutableStateFlow<HistoryOptions?>(null)
@@ -50,6 +51,7 @@ class ClipboardHistory private constructor(context: Context) {
         scope.launch { safely { mutex.withLock {
             val settings = preferences.options.first()
             if (settings.enabled && !(settings.skipSensitive && sensitive) && text.isNotEmpty()) {
+                if (direction == "From phone" && clearRecaptureGuard.shouldSuppress(text)) return@withLock
                 val hash = com.clipsync.core.hash(text.toByteArray(Charsets.UTF_8))
                 if (hash == lastRecordedHash && direction == lastRecordedDirection) return@withLock
                 db.insert(text, direction, settings, timestamp)
@@ -80,8 +82,24 @@ class ClipboardHistory private constructor(context: Context) {
         mutableEntries.value = db.list()
         db.payload(id)
     } }
-    fun delete(id: Long) = scope.launch { safely { mutex.withLock { db.delete(id); mutableEntries.value = db.list() } } }
-    fun clear() = scope.launch { safely { mutex.withLock { db.clear(); mutableEntries.value = emptyList(); lastRecordedHash = null; lastRecordedDirection = null } } }
+    fun delete(id: Long) = scope.launch { safely { mutex.withLock {
+        db.delete(id)
+        // Let the same local text be recorded again after it has been explicitly deleted.
+        lastRecordedHash = null
+        lastRecordedDirection = null
+        mutableEntries.value = db.list()
+    } } }
+    fun setPinned(id: Long, pinned: Boolean) = scope.launch { safely { mutex.withLock {
+        db.setPinned(id, pinned)
+        mutableEntries.value = db.list()
+    } } }
+    suspend fun clear(suppressLocalText: String? = null) = withContext(Dispatchers.IO) { mutex.withLock {
+        db.clear()
+        mutableEntries.value = emptyList()
+        lastRecordedHash = null
+        lastRecordedDirection = null
+        clearRecaptureGuard.arm(suppressLocalText)
+    } }
     suspend fun cleanup() = withContext(Dispatchers.IO) { mutex.withLock {
         db.prune(preferences.options.first(), System.currentTimeMillis()); mutableEntries.value = db.list()
     } }
@@ -103,5 +121,33 @@ class ClipboardHistory private constructor(context: Context) {
         fun get(context: Context): ClipboardHistory = instance ?: synchronized(this) {
             instance ?: ClipboardHistory(context).also { instance = it }
         }
+    }
+}
+
+/** Prevents dialog-dismiss focus restoration from immediately re-recording the clipboard just cleared. */
+internal class LocalHistoryClearGuard(
+    private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val lifetimeMillis: Long = 1500,
+) {
+    private var clearedTextHash: String? = null
+    private var expiresAt = 0L
+
+    fun arm(text: String?) {
+        clearedTextHash = text?.takeIf(String::isNotEmpty)?.let {
+            com.clipsync.core.hash(it.toByteArray(Charsets.UTF_8))
+        }
+        expiresAt = if (clearedTextHash == null) 0 else nowMillis() + lifetimeMillis
+    }
+
+    fun shouldSuppress(text: String, now: Long = nowMillis()): Boolean {
+        val expected = clearedTextHash ?: return false
+        if (now >= expiresAt) {
+            clearedTextHash = null
+            return false
+        }
+        val actual = com.clipsync.core.hash(text.toByteArray(Charsets.UTF_8))
+        if (actual != expected) return false
+        clearedTextHash = null
+        return true
     }
 }

@@ -60,7 +60,8 @@ class PairingController(
                                 save(DevicePolicy.merge(before, incoming, replacementId))
                                 if (existing == null || (!existing.paused && existing.connectionState != DeviceState.Connected)) onPaired(incoming.id)
                                 SyncRuntime.updatePairingFeedback(revision) {
-                                    it.copy(pairingMessage = null, pairingFailed = false)
+                                    it.copy(pairingMessage = null, pairingFailed = false,
+                                        pairingCompleteRevision = it.pairingCompleteRevision + 1)
                                 }
                                 FileLogger.info("Paired PC after typed one-time code: ${endpoint.address}:${endpoint.port}")
                             }

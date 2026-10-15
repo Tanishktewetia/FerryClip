@@ -154,7 +154,10 @@ fun MainScreen(state: SyncUiState, lastCrash: String?, onDismissCrash: () -> Uni
                     onSaveLogs = onSaveLogs,
                 )
             } else if (addingPc) {
-                AddDevice(state, onPair, onCancelPair, replacementId, { replacementId = it }, { codeFocused = it })
+                AddDevice(state, onPair, onCancelPair, replacementId, { replacementId = it }, { codeFocused = it }, {
+                    addingPc = false
+                    replacementId = null
+                })
             } else {
                 if (!notifications || !battery || (!tile && !tileDismissed)) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -262,7 +265,7 @@ private fun DeviceTile(device: PairedDevice, network: String, connect: (String) 
         }
     }
 }@Composable
-private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cancel: () -> Unit, replacementId: String?, onReplacement: (String?) -> Unit, onCodeFocus: (Boolean) -> Unit) {
+private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cancel: () -> Unit, replacementId: String?, onReplacement: (String?) -> Unit, onCodeFocus: (Boolean) -> Unit, onPairComplete: () -> Unit) {
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     var code by rememberSaveable { mutableStateOf("") }
@@ -276,14 +279,21 @@ private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cance
     }
     var devicesAtPairStart by remember { mutableStateOf<List<PairedDevice>?>(null) }
     var pairSearchStarted by remember { mutableStateOf(false) }
-    LaunchedEffect(state.searching, state.pairingMessage, state.devices) {
-        val baseline = devicesAtPairStart
-        if (baseline != null && state.devices != baseline) { code = ""; devicesAtPairStart = null; pairSearchStarted = false }
-        if (state.searching) pairSearchStarted = true
-        else if (baseline != null && pairSearchStarted) {
+    var pairingRevisionAtStart by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(state.searching, state.pairingMessage, state.devices, state.pairingCompleteRevision) {
+        val baselineRevision = pairingRevisionAtStart
+        if (baselineRevision != null && state.pairingCompleteRevision > baselineRevision) {
+            code = ""
+            devicesAtPairStart = null
+            pairSearchStarted = false
+            pairingRevisionAtStart = null
+            onPairComplete()
+        } else if (state.searching) pairSearchStarted = true
+        else if (devicesAtPairStart != null && pairSearchStarted) {
             if (state.pairingMessage == null) code = ""
             devicesAtPairStart = null
             pairSearchStarted = false
+            pairingRevisionAtStart = null
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -294,7 +304,7 @@ private fun AddDevice(state: SyncUiState, pair: (String, String?) -> Unit, cance
         OutlinedTextField(code, { code = it.filter { digit -> digit in '0'..'9' }.take(6) }, label = { Text("Code from your PC") }, placeholder = { Text("123456") }, singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { keyboard?.hide(); focusManager.clearFocus() }), modifier = Modifier.fillMaxWidth().bringIntoViewRequester(codeBringIntoView).onFocusChanged { codeFocused = it.isFocused; onCodeFocus(it.isFocused) }, enabled = !state.searching, textStyle = MaterialTheme.typography.headlineSmall)
-        Button(onClick = { keyboard?.hide(); focusManager.clearFocus(); devicesAtPairStart = state.devices; pairSearchStarted = false; pair(code, replacementId) }, enabled = code.length == 6 && !state.searching, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+        Button(onClick = { keyboard?.hide(); focusManager.clearFocus(); devicesAtPairStart = state.devices; pairingRevisionAtStart = state.pairingCompleteRevision; pairSearchStarted = false; pair(code, replacementId) }, enabled = code.length == 6 && !state.searching, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
             Text(if (state.searching) "Connecting on your local network…" else if (replacementId == null) "Pair this PC" else "Replace pairing")
         }
         if (replacementId != null) TextButton(onClick = { onReplacement(null) }) { Text("Cancel replacement") }

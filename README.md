@@ -20,7 +20,7 @@ FerryClip transfers clipboard text directly between a Windows PC and Android pho
 - Recover connections over local Wi-Fi and hotspot networks, with manual IP entry when needed.
 - Sync text from Windows to Android while connected; sending from Android requires a deliberate notification or Quick Settings action.
 - Keep optional clipboard history locally, encrypted at rest, with privacy and retention settings. History is not shared between devices.
-- Use the Windows system-tray popover or full main window to manage devices, history, settings, and help.
+- Left-click or double-click the Windows tray icon to open the Dashboard. Right-click for **Open FerryClip**, **Pause sync**/**Resume sync**, **Pair new device**, and **Quit FerryClip**; hover over the icon to see the connection status. On first launch, a short welcome guide helps with installing the Android app, pairing, and finding the tray icon; reopen it anytime from **Help & Docs → Show welcome guide again**.
 
 ## Downloads
 
@@ -78,7 +78,7 @@ Android build outputs include both `FerryClip-<versionName>.apk` and the fixed-n
 
 Clipboard data transfers directly over the local network using TLS 1.3. Android history uses an Android Keystore-protected key; Windows history uses current-user Windows Data Protection. History is local to each device. Pausing sync stops transfer in both directions. Android background recovery can depend on notification and battery settings.
 
-For diagnostics, use **Advanced → Diagnostics** on Android or **Open Log Folder** from the Windows tray menu. When reporting an issue, include app versions, network mode, test steps, and expected versus actual behavior. Do not include clipboard contents or other private data.
+For diagnostics, use **Advanced → Diagnostics** on Android. When reporting an issue, include app versions, network mode, test steps, and expected versus actual behavior. Do not include clipboard contents or other private data.
 
 ## Contributing and issues
 

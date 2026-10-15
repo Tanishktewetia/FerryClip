@@ -1,83 +1,277 @@
-<UserControl x:Class="ClipSync.Windows.MainUI.Pages.Onboarding.OnboardingPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:components="clr-namespace:ClipSync.Windows.MainUI.Components">
+<UserControl x:Class="ClipSync.Windows.MainUI.Pages.Onboarding.OnboardingPage"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:components="clr-namespace:ClipSync.Windows.MainUI.Components">
  <UserControl.Resources>
   <ResourceDictionary>
-   <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../../Theme/Tokens.xaml"/><ResourceDictionary Source="../../Theme/Controls.xaml"/><ResourceDictionary Source="../../Theme/Icons.xaml"/></ResourceDictionary.MergedDictionaries>
-   <SolidColorBrush x:Key="GuideBase" Color="{DynamicResource BackgroundColor}"/><SolidColorBrush x:Key="GuideSurface" Color="{DynamicResource SurfaceColor}"/><SolidColorBrush x:Key="GuideRaised" Color="{DynamicResource AccentLightColor}"/><SolidColorBrush x:Key="GuideCard" Color="{DynamicResource CardColor}"/><SolidColorBrush x:Key="GuideText" Color="{DynamicResource TextPrimaryColor}"/><SolidColorBrush x:Key="GuideMuted" Color="{DynamicResource TextSecondaryColor}"/><SolidColorBrush x:Key="GuideLine" Color="{DynamicResource BorderColor}"/><SolidColorBrush x:Key="GuideAccent" Color="{DynamicResource AccentColor}"/><SolidColorBrush x:Key="GuideDanger" Color="{DynamicResource ErrorColor}"/><SolidColorBrush x:Key="GuideConnected" Color="{DynamicResource ConnectedColor}"/><SolidColorBrush x:Key="GuidePaused" Color="{DynamicResource PausedColor}"/><SolidColorBrush x:Key="GuideAccentText" Color="{DynamicResource TextOnPrimaryColor}"/>   <BooleanToVisibilityConverter x:Key="BoolVisibility"/>
+   <ResourceDictionary.MergedDictionaries>
+    <ResourceDictionary Source="../../Theme/Tokens.xaml"/>
+    <ResourceDictionary Source="../../Theme/Controls.xaml"/>
+    <ResourceDictionary Source="../../Theme/Icons.xaml"/>
+   </ResourceDictionary.MergedDictionaries>
+   <BooleanToVisibilityConverter x:Key="BoolVisibility"/>
+   <!-- These aliases keep the pairing panel and high-contrast code aligned with the app theme. -->
+   <SolidColorBrush x:Key="GuideBase" Color="#15181C"/>
+   <SolidColorBrush x:Key="GuideSurface" Color="#1A1D21"/>
+   <SolidColorBrush x:Key="GuideRaised" Color="#2A2F36"/>
+   <SolidColorBrush x:Key="GuideCard" Color="#23272D"/>
+   <SolidColorBrush x:Key="GuideText" Color="#F2F4F7"/>
+   <SolidColorBrush x:Key="GuideMuted" Color="#B3FFFFFF"/>
+   <SolidColorBrush x:Key="GuideLine" Color="#2F343B"/>
+   <SolidColorBrush x:Key="GuideAccent" Color="#9EC5FF"/>
+   <SolidColorBrush x:Key="GuideAccentText" Color="#0B2A52"/>
+   <SolidColorBrush x:Key="GuideDanger" Color="#FF8A8A"/>
+   <SolidColorBrush x:Key="GuideConnected" Color="#70D6A4"/>
+   <SolidColorBrush x:Key="GuidePaused" Color="#F2C46D"/>
    <Geometry x:Key="PcIcon">M2,3 L22,3 22,17 2,17 Z M8,21 L16,21 M12,17 L12,21 M7,9 L10,12 15,7</Geometry>
    <Geometry x:Key="PhoneIcon">M7,1 L17,1 Q19,1 19,3 L19,21 Q19,23 17,23 L7,23 Q5,23 5,21 L5,3 Q5,1 7,1 Z M10,19 L14,19</Geometry>
-   <Geometry x:Key="CopyIcon">M8,3 L20,3 20,17 8,17 Z M4,7 L4,21 16,21</Geometry><Geometry x:Key="GlobeIcon">M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 M2,12 L22,12 M12,2 C7,6 7,18 12,22 M12,2 C17,6 17,18 12,22</Geometry><Geometry x:Key="ShieldIcon">M12,2 L20,5 L19,13 Q17,19 12,22 Q7,19 5,13 L4,5 Z M8,12 L11,15 L16,9</Geometry>
-   <Style x:Key="MiniCard" TargetType="Border"><Setter Property="Background" Value="{DynamicResource GuideSurface}"/><Setter Property="BorderBrush" Value="{DynamicResource GuideLine}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="9"/><Setter Property="Padding" Value="14"/><Setter Property="Margin" Value="0,0,0,10"/></Style>
-   <Style x:Key="StepperButton" TargetType="Button" BasedOn="{StaticResource MainButton}"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/><Setter Property="Padding" Value="5,6"/><Setter Property="MinHeight" Value="44"/><Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}"/><Style.Triggers><DataTrigger Binding="{Binding IsCurrent}" Value="True"><Setter Property="Foreground" Value="{DynamicResource GuideAccent}"/></DataTrigger><DataTrigger Binding="{Binding IsComplete}" Value="True"><Setter Property="Foreground" Value="{DynamicResource GuideText}"/></DataTrigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GuideAccent}"/></Trigger></Style.Triggers></Style>
+   <Geometry x:Key="CopyIcon">M8,3 L20,3 20,17 8,17 Z M4,7 L4,21 16,21</Geometry>
+   <Geometry x:Key="GlobeIcon">M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 M2,12 L22,12 M12,2 C7,6 7,18 12,22 M12,2 C17,6 17,18 12,22</Geometry>
+   <Geometry x:Key="ShieldIcon">M12,2 L20,5 L19,13 Q17,19 12,22 Q7,19 5,13 L4,5 Z M8,12 L11,15 L16,9</Geometry>
+   <Style x:Key="RailStepButton" TargetType="Button" BasedOn="{StaticResource MainButton}">
+    <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="Padding" Value="4,8"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="MinHeight" Value="44"/><Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}"/>
+   </Style>
+   <ItemsPanelTemplate x:Key="VerticalStepsPanel"><StackPanel Orientation="Vertical"/></ItemsPanelTemplate>
+   <ItemsPanelTemplate x:Key="HorizontalStepsPanel"><UniformGrid Rows="1"/></ItemsPanelTemplate>
+   <Style x:Key="GuideRow" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource CardSurface}"/><Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+    <Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="16"/>
+   </Style>
+   <Style x:Key="NumberBadge" TargetType="Border">
+    <Setter Property="Width" Value="30"/><Setter Property="Height" Value="30"/><Setter Property="CornerRadius" Value="15"/>
+    <Setter Property="Background" Value="{StaticResource Raised}"/><Setter Property="BorderBrush" Value="{StaticResource Line}"/><Setter Property="BorderThickness" Value="1"/>
+   </Style>
   </ResourceDictionary>
  </UserControl.Resources>
- <Grid x:Name="RootGrid" Background="{DynamicResource GuideSurface}" Margin="24,10,24,16">
-  <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="60"/></Grid.RowDefinitions>
-  <DockPanel Grid.Row="0" LastChildFill="False" Margin="8,0">
-   <StackPanel Orientation="Horizontal" VerticalAlignment="Center" AutomationProperties.Name="FerryClip brand"><Image Source="/FerryClip;component/Assets/ferryclip_logo.png" Width="32" Height="32" AutomationProperties.Name="FerryClip logo"/><TextBlock Text="FerryClip" FontSize="18" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/><TextBlock Text="/ Getting started" Foreground="{DynamicResource GuideMuted}" VerticalAlignment="Center" Margin="9,1,0,0"/></StackPanel>
-   <Button x:Name="SkipButton" DockPanel.Dock="Right" Content="Skip setup" Command="{Binding SkipCommand}" Background="Transparent" BorderBrush="Transparent" Foreground="{DynamicResource GuideText}" Style="{StaticResource MainButton}" AutomationProperties.Name="Skip setup"/>
-  </DockPanel>
-  <ItemsControl x:Name="Stepper" Grid.Row="1" ItemsSource="{Binding Steps}" MaxWidth="1020" HorizontalAlignment="Center" Margin="8,8,8,12" AutomationProperties.Name="{Binding StepCounter}">
-   <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-   <ItemsControl.ItemTemplate><DataTemplate><Button Command="{Binding Command}" Style="{StaticResource StepperButton}"><StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><Border x:Name="StepMarker" Width="22" Height="22" CornerRadius="11" BorderThickness="1" BorderBrush="{DynamicResource GuideLine}" Background="{DynamicResource GuideSurface}" Margin="0,0,7,0"><TextBlock x:Name="StepGlyph" Text="{Binding Glyph}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock x:Name="StepLabel" Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource GuideMuted}"/></StackPanel></Button><DataTemplate.Triggers><DataTrigger Binding="{Binding IsCurrent}" Value="True"><Setter TargetName="StepMarker" Property="Background" Value="{DynamicResource GuideAccent}"/><Setter TargetName="StepMarker" Property="BorderBrush" Value="{DynamicResource GuideAccent}"/><Setter TargetName="StepGlyph" Property="Foreground" Value="{DynamicResource GuideAccentText}"/><Setter TargetName="StepLabel" Property="Foreground" Value="{DynamicResource GuideAccent}"/><Setter TargetName="StepLabel" Property="FontWeight" Value="SemiBold"/></DataTrigger><DataTrigger Binding="{Binding IsComplete}" Value="True"><Setter TargetName="StepMarker" Property="Background" Value="{DynamicResource GuideConnected}"/><Setter TargetName="StepMarker" Property="BorderBrush" Value="{DynamicResource GuideConnected}"/><Setter TargetName="StepGlyph" Property="Text" Value="✓"/><Setter TargetName="StepGlyph" Property="Foreground" Value="{DynamicResource GuideBase}"/><Setter TargetName="StepLabel" Property="Foreground" Value="{DynamicResource GuideText}"/></DataTrigger></DataTemplate.Triggers></DataTemplate></ItemsControl.ItemTemplate>
-  </ItemsControl>
-  <ScrollViewer x:Name="ContentScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
-   <Grid x:Name="ContentGrid" MaxWidth="1100" HorizontalAlignment="Center" Margin="8,4,8,14">
-    <Grid.ColumnDefinitions><ColumnDefinition Width="420"/><ColumnDefinition Width="40"/><ColumnDefinition Width="560"/></Grid.ColumnDefinitions>
-    <StackPanel x:Name="LeftColumn" Grid.Column="0" VerticalAlignment="Top" Margin="0" MaxWidth="420">
-     <TextBlock Text="{Binding StepTitle}" FontSize="34" FontWeight="SemiBold" TextWrapping="Wrap" MaxWidth="410" LineHeight="41" AutomationProperties.Name="{Binding StepTitle}"/>
-     <TextBlock Text="{Binding StepDescription}" FontSize="16" Foreground="{DynamicResource GuideText}" TextWrapping="Wrap" LineHeight="24" Margin="0,15,0,0" MaxWidth="410"/>
-     <TextBlock Text="Change sync, history, and startup options later in Settings." FontSize="13" Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap" Margin="0,18,0,0" Visibility="{Binding ShowSettingsFootnote,Converter={StaticResource BoolVisibility}}"/>
-     <TextBlock Text="You can replay this guide any time from Help &amp; Docs." FontSize="13" Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="{Binding IsTray,Converter={StaticResource BoolVisibility}}"/>
+
+ <Grid x:Name="RootGrid" Background="{StaticResource Base}">
+  <Grid.RowDefinitions><RowDefinition Height="68"/><RowDefinition Height="*"/><RowDefinition Height="68"/></Grid.RowDefinitions>
+
+  <Border Grid.Row="0" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="32,0">
+   <Grid>
+    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" AutomationProperties.Name="FerryClip brand">
+     <Image Source="/FerryClip;component/Assets/ferryclip_logo.png" Width="30" Height="30" AutomationProperties.Name="FerryClip logo"/>
+     <TextBlock Text="FerryClip" FontSize="18" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center"/>
+     <Border Width="1" Height="20" Background="{StaticResource Line}" Margin="16,0"/>
+     <TextBlock Text="Getting started" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
     </StackPanel>
-    <Border x:Name="RightCard" Grid.Column="2" Style="{StaticResource Card}" Background="{DynamicResource GuideCard}" BorderBrush="{DynamicResource GuideLine}" Padding="22" Margin="0,0,0,0" MinHeight="380" VerticalAlignment="Top" AutomationProperties.Name="Onboarding step content">
-     <Grid x:Name="StepContent" Opacity="1">
-      <!-- Welcome -->
-      <StackPanel Visibility="{Binding IsWelcome,Converter={StaticResource BoolVisibility}}">
-       <TextBlock Text="Your devices, connected directly" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15"/>
-       <Grid AutomationProperties.Name="A PC and phone exchange clipboard text over the same local network."><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="72"/><ColumnDefinition/></Grid.ColumnDefinitions>
-        <StackPanel HorizontalAlignment="Center"><Border Width="92" Height="78" CornerRadius="12" Background="{DynamicResource GuideRaised}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1"><Path Data="{StaticResource PcIcon}" Width="40" Height="40" Stretch="Uniform" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.7" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="This PC" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,7,0,0"/></StackPanel>
-        <StackPanel Grid.Column="1" VerticalAlignment="Center" AutomationProperties.Name="Text travels in both directions"><Path Data="M5,10 L59,10 M5,10 L12,5 M5,10 L12,15 M59,10 L52,5 M59,10 L52,15" Stroke="{DynamicResource GuideAccent}" StrokeThickness="2"/><TextBlock Text="text" FontSize="12" Foreground="{DynamicResource GuideMuted}" HorizontalAlignment="Center" Margin="0,7,0,0"/></StackPanel>
-        <StackPanel Grid.Column="2" HorizontalAlignment="Center"><Border Width="92" Height="78" CornerRadius="12" Background="{DynamicResource GuideRaised}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1"><Path Data="{StaticResource PhoneIcon}" Width="30" Height="40" Stretch="Uniform" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.7" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Your phone" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,7,0,0"/></StackPanel>
-       </Grid>
-       <Border Background="{DynamicResource GuideRaised}" CornerRadius="12" Padding="10,7" HorizontalAlignment="Center" Margin="0,12,0,14" AutomationProperties.Name="Same Wi-Fi, hotspot or local VPN"><TextBlock Text="Same Wi-Fi, hotspot or local VPN" FontSize="13" HorizontalAlignment="Center"/></Border>
-       <WrapPanel HorizontalAlignment="Center" Margin="0,0,0,16"><Border Background="{DynamicResource GuideSurface}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1" CornerRadius="12" Padding="9,5" Margin="0,0,7,6" AutomationProperties.Name="TLS 1.3 encrypted"><TextBlock Text="TLS 1.3 encrypted" FontSize="12"/></Border><Border Background="{DynamicResource GuideSurface}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1" CornerRadius="12" Padding="9,5" Margin="0,0,7,6" AutomationProperties.Name="Local network only"><TextBlock Text="Local network only" FontSize="12"/></Border><Border Background="{DynamicResource GuideSurface}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1" CornerRadius="12" Padding="9,5" Margin="0,0,0,6" AutomationProperties.Name="No account required"><TextBlock Text="No account" FontSize="12"/></Border></WrapPanel>
-       <TextBlock Text="What we’ll do" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,6"/><TextBlock Text="1   Get the Android app&#x0a;2   Pair your phone&#x0a;3   Learn how sending works&#x0a;4   Find FerryClip in the tray" TextWrapping="Wrap" LineHeight="24" AutomationProperties.Name="Four setup steps: Get the Android app; pair your phone; learn how sending works; find FerryClip in the tray."/>
+    <Button x:Name="SkipButton" Grid.Column="1" Content="Skip setup" Command="{Binding SkipCommand}"
+            Style="{StaticResource MainButton}" Background="Transparent" BorderBrush="Transparent"
+            Foreground="{StaticResource Text}" AutomationProperties.Name="Skip setup"/>
+   </Grid>
+  </Border>
+
+  <ScrollViewer x:Name="ContentScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+   <Grid x:Name="ContentGrid" MaxWidth="1440" HorizontalAlignment="Center" Margin="32,16">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="224"/><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="*"/></Grid.RowDefinitions>
+
+    <Border x:Name="StepperRegion" Grid.Column="0" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}"
+            BorderThickness="0,0,1,0" Padding="16,24" VerticalAlignment="Stretch">
+     <DockPanel LastChildFill="False">
+      <StackPanel x:Name="RailIntro" DockPanel.Dock="Top" Margin="8,0,8,24">
+       <TextBlock Text="Your route" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}"/>
+       <TextBlock Text="Five short steps." FontSize="16" FontWeight="SemiBold" Margin="0,8,0,0"/>
+       <TextBlock Text="Your clips stay on your local network." FontSize="13" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
       </StackPanel>
-      <!-- Android app -->
-      <StackPanel Visibility="{Binding IsDownload,Converter={StaticResource BoolVisibility}}">
-       <Border Style="{StaticResource MiniCard}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="66"/><ColumnDefinition/></Grid.ColumnDefinitions><Border Width="60" Height="30" CornerRadius="9" Background="{DynamicResource GuideRaised}" VerticalAlignment="Top"><StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock Text="1" Foreground="{DynamicResource GuideAccent}" FontWeight="SemiBold" Margin="0,0,5,0"/><Path Data="{StaticResource GlobeIcon}" Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5" AutomationProperties.Name="GlobeIcon illustration"/></StackPanel></Border><StackPanel Grid.Column="1"><TextBlock Text="Open ferryclip.app on your phone" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Or copy the address and send it to yourself, for example in a message." Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap" Margin="0,5,0,8"/><WrapPanel><Button Content="Open ferryclip.app" Command="{Binding OpenWebsiteCommand}" Style="{StaticResource MainButton}" AutomationProperties.Name="Open ferryclip.app"/><Button Content="Copy link" Command="{Binding CopyLinkCommand}" Margin="7,0,0,0" AutomationProperties.Name="Copy ferryclip.app link"/></WrapPanel></StackPanel></Grid></Border>
-       <Border Style="{StaticResource MiniCard}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="66"/><ColumnDefinition/></Grid.ColumnDefinitions><Border Width="60" Height="30" CornerRadius="9" Background="{DynamicResource GuideRaised}" VerticalAlignment="Top"><StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock Text="2" Foreground="{DynamicResource GuideAccent}" FontWeight="SemiBold" Margin="0,0,5,0"/><Path Data="{StaticResource PhoneIcon}" Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5" AutomationProperties.Name="PhoneIcon illustration"/></StackPanel></Border><StackPanel Grid.Column="1"><TextBlock Text="Download and open the Android app" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="The app supports Android 7 and newer. Secure clipboard sync requires Android 10 or newer (TLS 1.3)." Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/></StackPanel></Grid></Border>
-       <Border Style="{StaticResource MiniCard}" Margin="0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="66"/><ColumnDefinition/></Grid.ColumnDefinitions><Border Width="60" Height="30" CornerRadius="9" Background="{DynamicResource GuideRaised}" VerticalAlignment="Top"><StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock Text="3" Foreground="{DynamicResource GuideAccent}" FontWeight="SemiBold" Margin="0,0,5,0"/><Path Data="{StaticResource ShieldIcon}" Width="16" Height="16" Stretch="Uniform" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5" AutomationProperties.Name="ShieldIcon illustration"/></StackPanel></Border><TextBlock Grid.Column="1" Text="If Android asks, allow installs from this source. You can switch that permission off again afterwards." FontWeight="SemiBold" TextWrapping="Wrap"/></Grid></Border>
-       <TextBlock Text="Already installed? Just continue." Foreground="{DynamicResource GuideMuted}" FontSize="13" Margin="0,5,0,0"/>
-      </StackPanel>
-      <!-- Pairing -->
-      <StackPanel Visibility="{Binding IsPair,Converter={StaticResource BoolVisibility}}">
-       <StackPanel Visibility="{Binding IsNotPaired,Converter={StaticResource BoolVisibility}}"><TextBlock Text="Before you pair" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/><TextBlock Text="1. On this PC, click Generate code." TextWrapping="Wrap" Margin="0,0,0,5"/><TextBlock Text="2. On your phone, open FerryClip. Enter the six digits in the Code from your PC field." TextWrapping="Wrap" Margin="0,0,0,5"/><TextBlock Text="3. Wait for Connected." TextWrapping="Wrap" Margin="0,0,0,10"/><components:PairingPanel x:Name="PairingPanel"/><TextBlock Text="Not now? You can pair any time from the Dashboard." Foreground="{DynamicResource GuideMuted}" FontSize="13" TextWrapping="Wrap" Margin="0,10,0,0"/></StackPanel>
-       <StackPanel Visibility="{Binding HasExistingDevices,Converter={StaticResource BoolVisibility}}"><TextBlock Text="{Binding PairSuccessText}" Foreground="{DynamicResource GuideAccent}" FontWeight="SemiBold" Margin="0,0,0,8" Visibility="{Binding HasPairSuccess,Converter={StaticResource BoolVisibility}}" AutomationProperties.Name="Pairing succeeded"/><ItemsControl ItemsSource="{Binding Devices}"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource MiniCard}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Path Data="{StaticResource PhoneIcon}" Width="20" Height="26" Stretch="Uniform" Stroke="{DynamicResource GuideText}" StrokeThickness="1.5" VerticalAlignment="Center" AutomationProperties.Name="Phone icon"/><StackPanel Grid.Column="1" Margin="8,0,10,0" VerticalAlignment="Center"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><StackPanel Orientation="Horizontal"><Ellipse Width="8" Height="8" Fill="{DynamicResource GuideMuted}" VerticalAlignment="Center" Margin="0,0,6,0"><Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="{DynamicResource GuideMuted}"/><Style.Triggers><DataTrigger Binding="{Binding IsConnected}" Value="True"><Setter Property="Fill" Value="{DynamicResource GuideConnected}"/></DataTrigger></Style.Triggers></Style></Ellipse.Style></Ellipse><TextBlock Text="{Binding StatusLine}" Foreground="{DynamicResource GuideMuted}" FontSize="13" ToolTip="{Binding FullTime}" AutomationProperties.Name="{Binding StatusLine}"/></StackPanel></StackPanel><TextBlock Grid.Column="2" Text="✓" Foreground="{DynamicResource GuideConnected}" FontSize="20" VerticalAlignment="Center" Visibility="{Binding IsConnected,Converter={StaticResource BoolVisibility}}" AutomationProperties.Name="Connected"/></Grid></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><Button Content="Pair another phone" Command="{Binding PairAnotherCommand}" HorizontalAlignment="Left" Style="{StaticResource MainButton}" AutomationProperties.Name="Pair another phone" Margin="0,2,0,8"/><components:PairingPanel x:Name="AdditionalPairingPanel" Visibility="{Binding ShowPairingPanel,Converter={StaticResource BoolVisibility}}"/><Border Style="{StaticResource MiniCard}" Background="{DynamicResource GuideSurface}" Margin="0"><StackPanel><TextBlock Text="Not now? You can pair any time from the Dashboard." Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap"/></StackPanel></Border></StackPanel>
-       <Expander x:Name="TroubleshootingPanel" Header="Can’t connect?" IsExpanded="False" Margin="0,10,0,0" AutomationProperties.Name="Troubleshooting tips"><StackPanel Margin="8"><TextBlock Text="Keep both devices on the same Wi-Fi, hotspot, or local VPN." TextWrapping="Wrap" Margin="0,4"/><TextBlock Text="Guest or public networks may prevent devices from seeing each other." TextWrapping="Wrap" Margin="0,4"/><TextBlock Text="If Windows asks about network access, allow FerryClip on private networks." TextWrapping="Wrap" Margin="0,4"/><Button Content="Open Help &amp; Docs" Click="Troubleshooting_Click" Style="{StaticResource QuietLink}" HorizontalAlignment="Left" Margin="-10,4,0,0"/></StackPanel></Expander>
-      </StackPanel>
-      <!-- How it works -->
-      <StackPanel Visibility="{Binding IsUseIt,Converter={StaticResource BoolVisibility}}">
-       <TextBlock Text="PC to phone" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="20"/><ColumnDefinition/><ColumnDefinition Width="20"/><ColumnDefinition/></Grid.ColumnDefinitions><Border Style="{StaticResource MiniCard}"><StackPanel><Path Data="{StaticResource CopyIcon}" Width="24" Height="24" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5"/><TextBlock Text="Copy on Windows" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border><TextBlock Grid.Column="1" Text="›" Foreground="{DynamicResource GuideMuted}" FontSize="20" VerticalAlignment="Center"/><Border Grid.Column="2" Style="{StaticResource MiniCard}"><StackPanel><Image Source="/FerryClip;component/Assets/ferryclip_logo.png" Width="22" Height="22"/><TextBlock Text="FerryClip sends it" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border><TextBlock Grid.Column="3" Text="›" Foreground="{DynamicResource GuideMuted}" FontSize="20" VerticalAlignment="Center"/><Border Grid.Column="4" Style="{StaticResource MiniCard}" Margin="0"><StackPanel><Path Data="{StaticResource PhoneIcon}" Width="22" Height="25" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5"/><TextBlock Text="Paste on Android" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border></Grid>
-       <TextBlock Text="Phone to PC" FontSize="17" FontWeight="SemiBold" Margin="0,10,0,10"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="20"/><ColumnDefinition/><ColumnDefinition Width="20"/><ColumnDefinition/></Grid.ColumnDefinitions><Border Style="{StaticResource MiniCard}"><StackPanel><Path Data="{StaticResource CopyIcon}" Width="24" Height="24" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5"/><TextBlock Text="Copy on Android" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border><TextBlock Grid.Column="1" Text="›" Foreground="{DynamicResource GuideMuted}" FontSize="20" VerticalAlignment="Center"/><Border Grid.Column="2" Style="{StaticResource MiniCard}"><StackPanel><Path Data="{StaticResource PhoneIcon}" Width="22" Height="25" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5"/><TextBlock Text="Tap Send to PC" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border><TextBlock Grid.Column="3" Text="›" Foreground="{DynamicResource GuideMuted}" FontSize="20" VerticalAlignment="Center"/><Border Grid.Column="4" Style="{StaticResource MiniCard}" Margin="0"><StackPanel><Path Data="{StaticResource PcIcon}" Width="24" Height="24" Stroke="{DynamicResource GuideAccent}" StrokeThickness="1.5"/><TextBlock Text="Paste on Windows" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border></Grid>
-       <Border Style="{StaticResource MiniCard}" Background="{DynamicResource GuideSurface}"><StackPanel><TextBlock Text="Android notification action" FontSize="13" Foreground="{DynamicResource GuideMuted}"/><Border Background="{DynamicResource GuideRaised}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,6,0,0"><StackPanel><TextBlock Text="FerryClip" FontSize="12" Foreground="{DynamicResource GuideMuted}"/><DockPanel Margin="0,4,0,0"><TextBlock Text="Clipboard ready" VerticalAlignment="Center"/><Border DockPanel.Dock="Right" Background="{DynamicResource GuideAccent}" CornerRadius="5" Padding="9,5"><TextBlock Text="Send to PC" Foreground="{DynamicResource GuideAccentText}" FontWeight="SemiBold"/></Border></DockPanel></StackPanel></Border></StackPanel></Border>
-       <TextBlock Text="You’re in control" FontSize="17" FontWeight="SemiBold" Margin="0,3,0,8"/><Border Style="{StaticResource MiniCard}"><StackPanel><TextBlock Text="Received text is copied to this PC automatically by default. Change Auto-copy received clips in Settings → Sync." TextWrapping="Wrap"/><TextBlock Text="History is optional and stays on each device." TextWrapping="Wrap" Margin="0,7,0,0"/><TextBlock Text="When enabled, Windows can skip recognized sensitive text and sensitive clipboard formats when saving history." TextWrapping="Wrap" Margin="0,7,0,0"/></StackPanel></Border>
-      </StackPanel>
-      <!-- Tray -->
-      <StackPanel Visibility="{Binding IsTray,Converter={StaticResource BoolVisibility}}">
-       <TextBlock Text="The Windows notification area" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
-       <Border Background="{DynamicResource GuideBase}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1" CornerRadius="12" Padding="12" AutomationProperties.Name="Illustration of the Windows notification area and FerryClip tray icon"><StackPanel>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><Border Background="{DynamicResource GuideRaised}" CornerRadius="8" Padding="8,5" Margin="0,0,8,0"><TextBlock Text="⌃" FontSize="18" AutomationProperties.Name="Show hidden icons chevron"/></Border><Border Background="{DynamicResource GuideRaised}" CornerRadius="8" Padding="8" Margin="0,0,5,0"><TextBlock Text="◈" Foreground="{DynamicResource GuideMuted}"/></Border><Border Background="{DynamicResource GuideRaised}" CornerRadius="8" Padding="8" Margin="0,0,5,0"><TextBlock Text="▣" Foreground="{DynamicResource GuideMuted}"/></Border><Border Background="{DynamicResource GuideRaised}" CornerRadius="8" Padding="8" Margin="0,0,8,0"><TextBlock Text="◉" Foreground="{DynamicResource GuideMuted}"/></Border><Border Background="{DynamicResource GuideAccent}" CornerRadius="8" Padding="5"><Image Source="/FerryClip;component/Assets/ferryclip_logo.png" Width="24" Height="24" AutomationProperties.Name="Highlighted FerryClip notification area icon"/></Border></StackPanel>
-        <Border Background="{DynamicResource GuideRaised}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1" CornerRadius="7" Padding="8" HorizontalAlignment="Center" Margin="0,8,0,0" AutomationProperties.Name="Example tray tooltip: FerryClip - Connected, 1 device"><TextBlock Text="{Binding TooltipExample}" FontSize="12"/></Border>
-       </StackPanel></Border>
-       <Border Style="{StaticResource MiniCard}" Margin="0,10,0,10"><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Left-click" FontWeight="SemiBold"/><TextBlock Text="Open the app on your last-used page." Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Right-click" FontWeight="SemiBold"/><TextBlock Text="Open the tray menu." Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel></Grid></Border>
-       <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition Width="190"/></Grid.ColumnDefinitions><TextBlock Text="Can’t see the icon? Click the ^ arrow, then drag FerryClip onto the taskbar." Foreground="{DynamicResource GuideText}" TextWrapping="Wrap" VerticalAlignment="Center"/><Border Grid.Column="2" Background="{DynamicResource GuideBase}" BorderBrush="{DynamicResource GuideLine}" BorderThickness="1" CornerRadius="9" Padding="9" AutomationProperties.Name="Tray context menu: Open FerryClip, Pause sync, Pair new device, Quit FerryClip"><StackPanel><TextBlock Text="Open FerryClip" Margin="0,3"/><TextBlock Text="{Binding TrayPauseText}" Margin="0,3"/><TextBlock Text="Pair new device" Margin="0,3"/><Separator/><TextBlock Text="Quit FerryClip" Margin="0,3"/></StackPanel></Border></Grid>
-       <Border Style="{StaticResource MiniCard}" Margin="0,14,0,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="76"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Start FerryClip with Windows" FontWeight="SemiBold"/><TextBlock Text="Start quietly in the tray when you sign in." Foreground="{DynamicResource GuideMuted}" TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel><TextBlock Grid.Column="1" Text="{Binding StartupState}" Foreground="{DynamicResource GuideMuted}" VerticalAlignment="Center" Margin="0,0,10,0" AutomationProperties.Name="Startup state"/><CheckBox Grid.Column="2" IsChecked="{Binding StartWithWindows,Mode=TwoWay}" Content="Start with Windows" AutomationProperties.Name="Start FerryClip with Windows" VerticalAlignment="Center"/></Grid></Border>
-      </StackPanel>
-     </Grid>
+      <ItemsControl x:Name="Stepper" DockPanel.Dock="Top" ItemsSource="{Binding Steps}" AutomationProperties.Name="{Binding StepCounter}">
+       <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Vertical"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+       <ItemsControl.ItemTemplate>
+        <DataTemplate>
+         <Button Command="{Binding Command}" Style="{StaticResource RailStepButton}">
+          <Grid>
+           <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+           <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/></Grid.RowDefinitions>
+           <Border x:Name="StepMarker" Style="{StaticResource NumberBadge}" HorizontalAlignment="Left">
+            <TextBlock x:Name="StepGlyph" Text="{Binding Glyph}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+           </Border>
+           <TextBlock x:Name="StepLabel" Grid.Column="1" Text="{Binding Label}" FontSize="14" Foreground="{StaticResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+           <Border x:Name="StepConnector" Grid.Row="1" Width="1" Background="{StaticResource Line}" HorizontalAlignment="Center"/>
+          </Grid>
+          <Button.Template><ControlTemplate TargetType="Button"><Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border></ControlTemplate></Button.Template>
+         </Button>
+         <DataTemplate.Triggers>
+          <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+           <Setter TargetName="StepMarker" Property="Background" Value="{StaticResource Accent}"/>
+           <Setter TargetName="StepMarker" Property="BorderBrush" Value="{StaticResource Accent}"/>
+           <Setter TargetName="StepGlyph" Property="Foreground" Value="{StaticResource AccentText}"/>
+           <Setter TargetName="StepLabel" Property="Foreground" Value="{StaticResource Text}"/>
+           <Setter TargetName="StepLabel" Property="FontWeight" Value="SemiBold"/>
+          </DataTrigger>
+          <DataTrigger Binding="{Binding IsComplete}" Value="True">
+           <Setter TargetName="StepMarker" Property="Background" Value="{StaticResource Connected}"/>
+           <Setter TargetName="StepMarker" Property="BorderBrush" Value="{StaticResource Connected}"/>
+           <Setter TargetName="StepGlyph" Property="Text" Value="✓"/>
+           <Setter TargetName="StepGlyph" Property="Foreground" Value="{StaticResource Base}"/>
+           <Setter TargetName="StepLabel" Property="Foreground" Value="{StaticResource Text}"/>
+          </DataTrigger>
+         </DataTemplate.Triggers>
+        </DataTemplate>
+       </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock x:Name="RailFooter" DockPanel.Dock="Bottom" Text="Local by design" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}" Margin="8,16,8,0"/>
+     </DockPanel>
     </Border>
+
+    <Grid x:Name="RightColumn" Grid.Column="2" MaxWidth="1120" HorizontalAlignment="Center" VerticalAlignment="Stretch">
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+     <StackPanel x:Name="LeftColumn" Grid.Row="0" Margin="0,0,0,16">
+      <TextBlock Text="{Binding StepCounter}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Accent}"/>
+      <TextBlock Text="{Binding StepTitle}" FontSize="34" FontWeight="SemiBold" TextWrapping="Wrap" MaxWidth="820" LineHeight="42" Margin="0,8,0,0" AutomationProperties.Name="{Binding StepTitle}"/>
+      <TextBlock Text="{Binding StepDescription}" FontSize="16" Foreground="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="23" MaxWidth="800" Margin="0,8,0,0"/>
+     </StackPanel>
+
+     <Border x:Name="RightCard" Grid.Row="1" Background="Transparent" BorderThickness="0" VerticalAlignment="Top" AutomationProperties.Name="Onboarding step content">
+      <Grid x:Name="StepContent">
+       <!-- Step 1: a direct, local route between the two devices. -->
+       <StackPanel Visibility="{Binding IsWelcome,Converter={StaticResource BoolVisibility}}">
+        <Grid MinHeight="192" VerticalAlignment="Center">
+         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+         <Border Style="{StaticResource GuideRow}" MinWidth="156" MaxWidth="224" Height="152" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+           <Path Data="{StaticResource PcIcon}" Width="58" Height="52" Stretch="Uniform" Stroke="{StaticResource Accent}" StrokeThickness="1.6" HorizontalAlignment="Center"/>
+           <TextBlock Text="This PC" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,0"/>
+          </StackPanel>
+         </Border>
+         <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Width="144">
+          <TextBlock Text="Direct link" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource Muted}" HorizontalAlignment="Center"/>
+          <Grid Height="28" Margin="0,8,0,8">
+           <Border Height="2" Background="{StaticResource Line}" VerticalAlignment="Center"/>
+           <Border Width="8" Height="8" CornerRadius="4" Background="{StaticResource Accent}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+           <Border Width="8" Height="8" CornerRadius="4" Background="{StaticResource Accent}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+           <TextBlock Text="↔" FontSize="20" Foreground="{StaticResource Accent}" Background="{StaticResource Base}" Padding="8,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Grid>
+          <TextBlock Text="Local network" FontSize="10" Foreground="{StaticResource Muted}" HorizontalAlignment="Center"/>
+         </StackPanel>
+         <Border Grid.Column="2" Style="{StaticResource GuideRow}" MinWidth="156" MaxWidth="224" Height="152" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+           <Path Data="{StaticResource PhoneIcon}" Width="38" Height="54" Stretch="Uniform" Stroke="{StaticResource Accent}" StrokeThickness="1.6" HorizontalAlignment="Center"/>
+           <TextBlock Text="Your phone" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,14,0,0"/>
+          </StackPanel>
+         </Border>
+        </Grid>
+        <Border Background="{StaticResource Raised}" CornerRadius="6" Padding="16" HorizontalAlignment="Center" Margin="0,16,0,0">
+         <TextBlock Text="Same Wi-Fi, hotspot or local VPN" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+        </Border>
+        <Grid Margin="0,24,0,0">
+         <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="1"/><ColumnDefinition/><ColumnDefinition Width="1"/><ColumnDefinition/></Grid.ColumnDefinitions>
+         <StackPanel><TextBlock Text="TLS 1.3" FontWeight="SemiBold"/><TextBlock Text="Encrypted in transit" FontSize="13" Foreground="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel>
+         <Border Grid.Column="1" Background="{StaticResource Line}"/>
+         <StackPanel Grid.Column="2" Margin="24,0,24,0"><TextBlock Text="Local only" FontWeight="SemiBold"/><TextBlock Text="No cloud relay" FontSize="13" Foreground="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel>
+         <Border Grid.Column="3" Background="{StaticResource Line}"/>
+         <StackPanel Grid.Column="4" Margin="24,0,0,0"><TextBlock Text="No account" FontWeight="SemiBold"/><TextBlock Text="Nothing to sign up for" FontSize="13" Foreground="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel>
+        </Grid>
+       </StackPanel>
+
+       <!-- Step 2: a short three-part install sequence. -->
+       <StackPanel Visibility="{Binding IsDownload,Converter={StaticResource BoolVisibility}}">
+        <Grid Margin="0,0,0,16">
+         <Grid.ColumnDefinitions><ColumnDefinition Width="48"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+         <Border Style="{StaticResource NumberBadge}" Background="{StaticResource Accent}" BorderBrush="{StaticResource Accent}"><TextBlock Text="1" Foreground="{StaticResource AccentText}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+         <StackPanel Grid.Column="1"><TextBlock Text="Open ferryclip.app on your phone" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="You can copy the address and send it to yourself, for example in a message." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/><WrapPanel Margin="0,16,0,0"><Button Content="Open ferryclip.app" Command="{Binding OpenWebsiteCommand}" Style="{StaticResource PrimaryButton}"/><Button Content="Copy link" Command="{Binding CopyLinkCommand}" Style="{StaticResource MainButton}" Margin="8,0,0,0"/></WrapPanel></StackPanel>
+        </Grid>
+        <Border Height="1" Background="{StaticResource Line}" Margin="0,0,0,16"/>
+        <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="48"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Style="{StaticResource NumberBadge}"><TextBlock Text="2" Foreground="{StaticResource Muted}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1"><TextBlock Text="Download and open the Android app" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="The app supports Android 7 and newer. Secure clipboard sync requires Android 10 or newer (TLS 1.3)." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Grid>
+        <Border Height="1" Background="{StaticResource Line}" Margin="0,0,0,16"/>
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="48"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Style="{StaticResource NumberBadge}"><TextBlock Text="3" Foreground="{StaticResource Muted}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1"><TextBlock Text="Allow the install if Android asks" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="Allow installs from this source. You can switch that permission off again afterwards." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Grid>
+       </StackPanel>
+
+       <!-- Step 3: the pairing panel is reused without starting it automatically. -->
+       <StackPanel Visibility="{Binding IsPair,Converter={StaticResource BoolVisibility}}">
+        <StackPanel Visibility="{Binding IsNotPaired,Converter={StaticResource BoolVisibility}}">
+         <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="1" Foreground="{StaticResource Accent}" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="On this PC, choose Generate code." TextWrapping="Wrap"/></Grid>
+         <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="2" Foreground="{StaticResource Accent}" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="On your phone, open FerryClip and enter the six digits in Code from your PC." TextWrapping="Wrap"/></Grid>
+         <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="3" Foreground="{StaticResource Accent}" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="Wait for Connected." TextWrapping="Wrap"/></Grid>
+         <components:PairingPanel x:Name="PairingPanel"/>
+         <Button Content="Can’t connect? Open Help" Click="Troubleshooting_Click" Style="{StaticResource QuietLink}" Foreground="{StaticResource Accent}" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+        </StackPanel>
+        <StackPanel Visibility="{Binding HasExistingDevices,Converter={StaticResource BoolVisibility}}">
+         <TextBlock Text="{Binding PairSuccessText}" Foreground="{StaticResource Connected}" FontWeight="SemiBold" Margin="0,0,0,16" Visibility="{Binding HasPairSuccess,Converter={StaticResource BoolVisibility}}" AutomationProperties.Name="Pairing succeeded"/>
+         <ItemsControl ItemsSource="{Binding Devices}">
+          <ItemsControl.ItemTemplate><DataTemplate>
+           <Border Style="{StaticResource GuideRow}" Margin="0,0,0,16"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="48"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Path Data="{StaticResource PhoneIcon}" Width="24" Height="32" Stretch="Uniform" Stroke="{StaticResource Accent}" StrokeThickness="1.5" VerticalAlignment="Center"/><StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="{Binding StatusLine}" Foreground="{StaticResource Muted}" FontSize="13" Margin="0,8,0,0" ToolTip="{Binding FullTime}"/></StackPanel><TextBlock Grid.Column="2" Text="✓" Foreground="{StaticResource Connected}" FontSize="20" VerticalAlignment="Center" Visibility="{Binding IsConnected,Converter={StaticResource BoolVisibility}}"/></Grid></Border>
+          </DataTemplate></ItemsControl.ItemTemplate>
+         </ItemsControl>
+         <Button Content="Pair another phone" Command="{Binding PairAnotherCommand}" Style="{StaticResource MainButton}" HorizontalAlignment="Left"/>
+         <components:PairingPanel x:Name="AdditionalPairingPanel" Visibility="{Binding DataContext.ShowPairingPanel,RelativeSource={RelativeSource AncestorType=UserControl},Converter={StaticResource BoolVisibility}}" Margin="0,16,0,0"/>
+        </StackPanel>
+       </StackPanel>
+
+       <!-- Step 4: simple routes, no notification mock. -->
+       <StackPanel Visibility="{Binding IsUseIt,Converter={StaticResource BoolVisibility}}">
+        <TextBlock Text="From PC to phone" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}" Margin="0,0,0,8"/>
+        <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+         <Border Style="{StaticResource GuideRow}"><StackPanel><Path Data="{StaticResource CopyIcon}" Width="24" Height="24" Stroke="{StaticResource Accent}" StrokeThickness="1.5"/><TextBlock Text="Copy on Windows" FontWeight="SemiBold" Margin="0,12,0,0"/></StackPanel></Border>
+         <TextBlock Grid.Column="1" Text="›" FontSize="24" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+         <Border Grid.Column="2" Style="{StaticResource GuideRow}"><StackPanel><Image Source="/FerryClip;component/Assets/ferryclip_logo.png" Width="24" Height="24"/><TextBlock Text="FerryClip sends it" FontWeight="SemiBold" Margin="0,12,0,0"/></StackPanel></Border>
+         <TextBlock Grid.Column="3" Text="›" FontSize="24" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+         <Border Grid.Column="4" Style="{StaticResource GuideRow}"><StackPanel><Path Data="{StaticResource PhoneIcon}" Width="20" Height="26" Stroke="{StaticResource Accent}" StrokeThickness="1.5"/><TextBlock Text="Paste on Android" FontWeight="SemiBold" Margin="0,12,0,0"/></StackPanel></Border>
+        </Grid>
+        <TextBlock Text="From phone to PC" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}" Margin="0,8,0,8"/>
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <Border Style="{StaticResource GuideRow}"><StackPanel><Path Data="{StaticResource CopyIcon}" Width="24" Height="24" Stroke="{StaticResource Accent}" StrokeThickness="1.5"/><TextBlock Text="Copy on Android" FontWeight="SemiBold" Margin="0,12,0,0"/></StackPanel></Border>
+         <TextBlock Grid.Column="1" Text="›" FontSize="24" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+         <Border Grid.Column="2" Style="{StaticResource GuideRow}"><StackPanel><Path Data="{StaticResource PhoneIcon}" Width="20" Height="26" Stroke="{StaticResource Accent}" StrokeThickness="1.5"/><TextBlock Text="Tap “Send to PC”" FontWeight="SemiBold" Margin="0,12,0,0"/></StackPanel></Border>
+         <TextBlock Grid.Column="3" Text="›" FontSize="24" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+         <Border Grid.Column="4" Style="{StaticResource GuideRow}"><StackPanel><Path Data="{StaticResource PcIcon}" Width="24" Height="24" Stroke="{StaticResource Accent}" StrokeThickness="1.5"/><TextBlock Text="Paste on Windows" FontWeight="SemiBold" Margin="0,12,0,0"/></StackPanel></Border>
+         <TextBlock Grid.Column="2" Grid.Row="1" Text="in the FerryClip notification or Quick Settings tile" FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,8,0,0"/>
+        </Grid>
+        <Grid Margin="0,16,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="1"/><ColumnDefinition/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <Border Grid.ColumnSpan="3" Style="{StaticResource GuideRow}" Padding="8,8,16,8"><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="✓" Foreground="{StaticResource Connected}" FontWeight="Bold" Margin="0,0,12,0"/><TextBlock Text="Auto-copy: received text is on by default. Change it in Settings → Sync." TextWrapping="NoWrap"/></StackPanel></Border>
+         <Border Grid.Row="1" Style="{StaticResource GuideRow}" Padding="8,8,16,8" Margin="0,8,8,0"><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="✓" Foreground="{StaticResource Connected}" FontWeight="Bold" Margin="0,0,12,0"/><TextBlock Text="History is optional and per device" TextWrapping="NoWrap"/></StackPanel></Border>
+         <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource GuideRow}" Padding="8,8,16,8" Margin="8,8,0,0"><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="✓" Foreground="{StaticResource Connected}" FontWeight="Bold" Margin="0,0,12,0"/><TextBlock Text="Sensitive clips can be skipped in history" TextWrapping="NoWrap"/></StackPanel></Border>
+        </Grid>
+       </StackPanel>
+
+       <!-- Step 5: tray location, real tooltip, controls. -->
+       <StackPanel Visibility="{Binding IsTray,Converter={StaticResource BoolVisibility}}">
+        <TextBlock Text="Notification area" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}" Margin="0,0,0,8"/>
+        <Border Style="{StaticResource GuideRow}" Padding="16">
+         <StackPanel>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+           <Border Background="{StaticResource Raised}" CornerRadius="6" Padding="10,8" Margin="0,0,8,0"><TextBlock Text="⌃" FontSize="18"/></Border>
+           <Border Background="{StaticResource Raised}" CornerRadius="6" Padding="10,8" Margin="0,0,8,0"><TextBlock Text="◈" Foreground="{StaticResource Muted}"/></Border>
+           <Border Background="{StaticResource Raised}" CornerRadius="6" Padding="10,8" Margin="0,0,8,0"><TextBlock Text="▣" Foreground="{StaticResource Muted}"/></Border>
+           <Border Background="{StaticResource Accent}" CornerRadius="6" Padding="8"><Image Source="/FerryClip;component/Assets/ferryclip_logo.png" Width="24" Height="24" AutomationProperties.Name="FerryClip notification-area icon"/></Border>
+          </StackPanel>
+          <Border Background="{StaticResource Raised}" CornerRadius="4" Padding="12" HorizontalAlignment="Center" Margin="0,8,0,0" AutomationProperties.Name="FerryClip tray tooltip"><TextBlock Text="{Binding TooltipExample}" FontSize="13"/></Border>
+         </StackPanel>
+        </Border>
+        <Grid Margin="0,16,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="24"/><ColumnDefinition/></Grid.ColumnDefinitions>
+         <StackPanel><TextBlock Text="LEFT-CLICK" FontSize="11" Foreground="{StaticResource Muted}"/><TextBlock Text="Open the Dashboard" FontSize="15" FontWeight="SemiBold" Margin="0,8,0,0"/></StackPanel>
+         <StackPanel Grid.Column="2"><TextBlock Text="RIGHT-CLICK" FontSize="11" Foreground="{StaticResource Muted}"/><TextBlock Text="Menu: Open FerryClip, Pause sync, Pair new device, Quit" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel>
+        </Grid>
+        <TextBlock Text="Can’t see the icon? Click ^ and drag FerryClip onto the taskbar." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,16,0,0"/>
+        <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,16,0,0">
+         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <StackPanel><TextBlock Text="Start FerryClip with Windows" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Start quietly in the tray when you sign in." Foreground="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="{Binding StartupState}" Foreground="{StaticResource Muted}" Margin="0,0,12,0" VerticalAlignment="Center"/><CheckBox IsChecked="{Binding StartWithWindows,Mode=TwoWay}" AutomationProperties.Name="Start FerryClip with Windows" VerticalAlignment="Center"/></StackPanel>
+         </Grid>
+        </Border>
+       </StackPanel>
+      </Grid>
+     </Border>
+    </Grid>
    </Grid>
   </ScrollViewer>
-  <DockPanel Grid.Row="3" LastChildFill="False" Margin="8,0" AutomationProperties.Name="{Binding StepCounter}"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button x:Name="BackButton" Content="Back" Command="{Binding BackCommand}" Background="{DynamicResource GuideSurface}" Foreground="{DynamicResource GuideText}" BorderBrush="{DynamicResource GuideLine}" Visibility="{Binding CanGoBack,Converter={StaticResource BoolVisibility}}" Style="{StaticResource MainButton}" Margin="0,0,9,0"/><Button x:Name="NextButton" Content="Continue" Command="{Binding NextCommand}" Style="{StaticResource PrimaryButton}" Background="{DynamicResource GuideAccent}" Foreground="{DynamicResource GuideAccentText}" BorderBrush="{DynamicResource GuideAccent}" IsDefault="True" AutomationProperties.Name="Continue"/></StackPanel></DockPanel>
+
+  <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="32,0">
+   <Grid>
+    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+     <TextBlock Text="Change sync, history, and startup options later in Settings." FontSize="12" Foreground="{StaticResource Muted}" Visibility="{Binding ShowSettingsFootnote,Converter={StaticResource BoolVisibility}}"/>
+     <TextBlock Text="You can replay this guide any time from Help &amp; Docs." FontSize="12" Foreground="{StaticResource Muted}" Margin="16,0,0,0" Visibility="{Binding IsTray,Converter={StaticResource BoolVisibility}}"/>
+    </StackPanel>
+    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+     <Button x:Name="BackButton" Content="Back" Command="{Binding BackCommand}" Background="Transparent" Foreground="{StaticResource Text}" BorderBrush="{StaticResource Line}" Margin="0,0,12,0" IsEnabled="{Binding CanGoBack}">
+      <Button.Style><Style TargetType="Button" BasedOn="{StaticResource MainButton}"><Style.Triggers><DataTrigger Binding="{Binding CanGoBack}" Value="False"><Setter Property="Opacity" Value="0"/></DataTrigger></Style.Triggers></Style></Button.Style>
+     </Button>
+     <Button x:Name="NextButton" Content="Continue" Command="{Binding NextCommand}" Style="{StaticResource PrimaryButton}" IsDefault="True" AutomationProperties.Name="Continue"/>
+    </StackPanel>
+   </Grid>
+  </Border>
  </Grid>
 </UserControl>

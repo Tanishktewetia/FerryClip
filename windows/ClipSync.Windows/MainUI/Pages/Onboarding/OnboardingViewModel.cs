@@ -28,7 +28,7 @@ public sealed class OnboardingViewModel : ObservableObject, IDisposable
  public double Progress=>(Step+1)*20;
  public string StepCounter=>$"Step {Step+1} of 5";
  public string StepTitle=>Step switch{0=>"Copy here. Paste there.",1=>"Get FerryClip on\nyour phone",2=>PairTitle,3=>"Two ways to send text",_=>"FerryClip lives in your tray"};
- public string StepDescription=>Step switch{0=>"FerryClip shares clipboard text between this PC and your Android phone over your own network. No account and no cloud.",1=>"Install FerryClip on Android, then come back here when you are ready to connect it to this PC.",2=>PairDescription,3=>"Copy on one device, then send or paste on the other. Here is exactly what to do.",_=>"FerryClip keeps running in the notification area when its window is hidden."};
+ public string StepDescription=>Step switch{0=>"Share clipboard text between this PC and Android over your local network—no account or cloud.",1=>"Install FerryClip on Android, then return here. Already installed? Continue.",2=>PairDescription,3=>"Copy on one device, then send or paste on the other. Here is exactly what to do.",_=>"FerryClip keeps running in the notification area when its window is hidden."};
  string PairTitle=>pairedDuringGuide is not null?(pairedDuringGuide.Connected?"Phone connected":"Phone paired"):shell.App.Devices.Count==0?"Connect your phone":shell.App.Devices.Any(d=>d.Connected)?"Your phone is connected":"Your phone is paired";
  string PairDescription=>pairedDuringGuide is not null?"The new phone has been paired with this PC.":shell.App.Devices.Count==0?"Pairing starts only when you choose Generate code. Keep both devices reachable on the same Wi-Fi, hotspot, or local VPN.":"This PC already has a paired phone. You can check its connection or add another phone.";
  public bool IsWelcome=>Step==0;public bool IsDownload=>Step==1;public bool IsPair=>Step==2;public bool IsUseIt=>Step==3;public bool IsTray=>Step==4;
@@ -39,7 +39,7 @@ public sealed class OnboardingViewModel : ObservableObject, IDisposable
  public bool HasPairSuccess=>pairedDuringGuide is not null;
  public string PairSuccessText=>pairedDuringGuide is null?"":$"✓  {pairedDuringGuide.Name} · {(pairedDuringGuide.Connected?"Connected":"Paired")}";
  public bool CanGoBack=>Step>0;
- public string TrayPauseText=>shell.App.IsPaused?"Resume sync":"Pause sync";public string TooltipExample=>shell.App.State switch{ConnectionState.Connected=>$"FerryClip - Connected, {shell.App.Devices.Count(d=>d.Connected)} {(shell.App.Devices.Count(d=>d.Connected)==1?"device":"devices")}",ConnectionState.Paused=>"FerryClip - Paused",ConnectionState.Unreachable=>"FerryClip - Not connected",_=>"FerryClip - No devices paired"};public bool ShowSettingsFootnote=>IsUseIt||IsTray;
+ public string TrayPauseText=>shell.App.IsPaused?"Resume sync":"Pause sync";public string TooltipExample=>shell.App.State switch{ConnectionState.Connected=>$"FerryClip - Connected, {shell.App.Devices.Count(d=>d.Connected)} {(shell.App.Devices.Count(d=>d.Connected)==1?"device":"devices")}",ConnectionState.Paused=>"FerryClip - Paused",ConnectionState.Unreachable=>"FerryClip - Not connected",_=>"FerryClip - No devices paired"};public bool ShowSettingsFootnote=>IsTray;
  public ObservableCollection<OnboardingDeviceItem> Devices{get;}
  
  public bool StartWithWindows{get=>shell.App.StartupEnabled;set{if(value==StartWithWindows)return;try{shell.App.SetStartup(value);}catch(Exception ex){shell.App.Report(ex);}Raise();}}

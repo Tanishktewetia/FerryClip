@@ -34,7 +34,7 @@ public sealed class TrayIconManager : IDisposable
         _pauseItem=AddItem("Pause sync",_pause,"\uE769");
         AddItem("Pair new device",_pair,"\uE710");
         _menu.Items.Add(new System.Windows.Controls.Separator());
-        var quit=AddItem("Quit FerryClip",()=>WpfApplication.Current.Shutdown(),"\uE7E8");
+        var quit=AddItem("Quit FerryClip",QuitApplication,"\uE7E8");
         quit.Tag = "Destructive";
         _menu.StaysOpen = false;
         _menu.Opened += (_, _) => PositionAndActivateMenu();
@@ -67,6 +67,13 @@ public sealed class TrayIconManager : IDisposable
         item.Click += (_, _) => { _menu.IsOpen = false; action(); };
         _menu.Items.Add(item);
         return item;
+    }
+
+    private void QuitApplication()
+    {
+        _menu.IsOpen = false;
+        _dismissTimer.Stop();
+        WpfApplication.Current.Dispatcher.BeginInvoke(new Action(() => WpfApplication.Current.Shutdown()), System.Windows.Threading.DispatcherPriority.ContextIdle);
     }
 
     private void OnMouseUp(object? sender, MouseEventArgs e)
@@ -175,6 +182,10 @@ public sealed class TrayIconManager : IDisposable
         _state.PropertyChanged -= StateChanged;
         _dismissTimer.Stop();
         _menu.IsOpen = false;
+        _menuHandle = IntPtr.Zero;
+        var menuOwner = _menuOwner;
+        _menuOwner = null;
+        menuOwner?.Dispose();
         _notifyIcon.Visible = false;
         _notifyIcon.MouseUp -= OnMouseUp;
         _notifyIcon.Icon?.Dispose();

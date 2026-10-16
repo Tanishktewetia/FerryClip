@@ -55,6 +55,7 @@
     let requestedSection = null;
     let releaseTimer = 0;
     const readingLine = () => (document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0) + 28;
+    const sectionHeading = section => section.querySelector('h2') || section;
     const setActiveSection = active => {
       links.forEach(link => {
         const current = link.getAttribute('href') === `#${active?.id}`;
@@ -64,14 +65,14 @@
     const updateActiveSection = () => {
       navFrame = 0;
       if (requestedSection) {
-        if (Math.abs(requestedSection.getBoundingClientRect().top - readingLine()) <= 24 || Date.now() > requestedSection._navDeadline) requestedSection = null;
+        if (Math.abs(sectionHeading(requestedSection).getBoundingClientRect().top - readingLine()) <= 24 || Date.now() > requestedSection._navDeadline) requestedSection = null;
         else { setActiveSection(requestedSection); return; }
       }
       let active = sections[0];
       const atPageEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
       if (atPageEnd) active = sections[sections.length - 1];
       else for (const section of sections) {
-        if (section.getBoundingClientRect().top <= readingLine()) active = section;
+        if (sectionHeading(section).getBoundingClientRect().top <= readingLine()) active = section;
         else break;
       }
       setActiveSection(active);
@@ -88,7 +89,7 @@
       setActiveSection(target);
       clearTimeout(releaseTimer);
       history.replaceState(null, '', link.hash);
-      window.scrollTo({top:window.scrollY + target.getBoundingClientRect().top - readingLine(), behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+      window.scrollTo({top:window.scrollY + sectionHeading(target).getBoundingClientRect().top - readingLine(), behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
       releaseTimer = setTimeout(() => { requestedSection = null; queueActiveSection(); }, 3050);
     });
     const cancelRequestedOnUserScroll = () => {

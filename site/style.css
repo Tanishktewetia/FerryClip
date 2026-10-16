@@ -85,3 +85,36 @@ html{scrollbar-gutter:stable;scrollbar-color:var(--scroll-thumb,var(--muted)) tr
 :root[data-theme=dark] .download-section{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
 :root[data-theme=dark] .platform-download{background:var(--soft);border-color:var(--line)}
 :root[data-theme=dark] .platform-download .text-link{color:var(--brand)}
+
+/* Optional, task-specific screenshots keep Setup & Help concise by default. */
+.guide-image-toggle{margin:14px 0 18px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.guide-image-toggle>summary{position:relative;display:flex;align-items:center;min-height:46px;padding:8px 32px 8px 0;cursor:pointer;list-style:none;color:var(--brand);font-size:13px;font-weight:600}
+.guide-image-toggle>summary::-webkit-details-marker{display:none}
+.guide-image-toggle>summary::after{content:"+";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:20px;font-weight:400;color:var(--muted)}
+.guide-image-toggle[open]>summary::after{content:"−"}
+.guide-image{width:min(100%,680px);margin:0 0 16px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.guide-image img{display:block;width:100%;max-height:440px;object-fit:contain;object-position:left center;border-radius:6px;background:var(--soft)}
+.guide-image figcaption{padding:9px 2px 1px;color:var(--muted);font-size:12px;line-height:1.55}
+.guide-image-phone{width:min(100%,280px)}
+.guide-image-phone img{width:auto;max-width:100%;max-height:520px;margin-inline:auto}
+.guide-image-menu{width:min(100%,340px)}
+.guide-image-menu img{width:auto;max-width:100%;max-height:360px;object-position:left top}
+@media(max-width:800px){.guide-image{padding:8px}.guide-image img{max-height:360px}.guide-image-phone{width:min(100%,250px)}.guide-image-phone img{max-height:480px}.guide-image-menu{width:min(100%,310px)}}
+
+/* Compact platform-specific settings reference */
+.settings-reference{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:30px;margin-top:28px}
+.settings-platform{min-width:0;padding:21px 22px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.settings-platform>h3{margin:0 0 14px!important;font-size:23px!important}
+.settings-platform dl{margin:0}
+.settings-platform dl>div{padding:12px 0;border-top:1px solid var(--line)}
+.settings-platform dt{font-size:13px;font-weight:650;color:var(--ink)}
+.settings-platform dd{margin:3px 0 0;font-size:12px!important;line-height:1.6!important;color:var(--muted)}
+.settings-platform .guide-image-toggle{margin-top:14px}
+.settings-platform .guide-image{margin-top:0}
+@media(max-width:800px){.settings-reference{grid-template-columns:1fr;gap:16px;margin-top:20px}.settings-platform{padding:18px 17px 8px}}
+
+/* Reduce header chrome while keeping controls comfortably tappable. */
+.site-header{height:72px}
+html{scroll-padding-top:88px}
+.docs-content section{scroll-margin-top:92px}
+@media(max-width:800px){.site-header{height:68px}.docs-content section{scroll-margin-top:84px}}

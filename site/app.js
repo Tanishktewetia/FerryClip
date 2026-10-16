@@ -52,24 +52,58 @@
     const links = [...docSidebar.querySelectorAll('a[href^="#"]')];
     const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
     let navFrame = 0;
-    const updateActiveSection = () => {
-      navFrame = 0;
-      let active = sections[0];
-      const atPageEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
-      if (atPageEnd) active = sections[sections.length - 1];
-      else for (const section of sections) {
-        if (section.getBoundingClientRect().top <= 170) active = section;
-        else break;
-      }
+    let requestedSection = null;
+    let releaseTimer = 0;
+    const readingLine = () => (document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0) + 28;
+    const setActiveSection = active => {
       links.forEach(link => {
         const current = link.getAttribute('href') === `#${active?.id}`;
         if (current) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current');
       });
     };
+    const updateActiveSection = () => {
+      navFrame = 0;
+      if (requestedSection) {
+        if (Math.abs(requestedSection.getBoundingClientRect().top - readingLine()) <= 24 || Date.now() > requestedSection._navDeadline) requestedSection = null;
+        else { setActiveSection(requestedSection); return; }
+      }
+      let active = sections[0];
+      const atPageEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
+      if (atPageEnd) active = sections[sections.length - 1];
+      else for (const section of sections) {
+        if (section.getBoundingClientRect().top <= readingLine()) active = section;
+        else break;
+      }
+      setActiveSection(active);
+    };
     const queueActiveSection = () => { if (!navFrame) navFrame = requestAnimationFrame(updateActiveSection); };
+    docSidebar.addEventListener('click', event => {
+      const link = event.target.closest('a[href^="#"]');
+      if (!link) return;
+      const target = sections.find(section => section.id === link.hash.slice(1));
+      if (!target) return;
+      event.preventDefault();
+      requestedSection = target;
+      requestedSection._navDeadline = Date.now() + 3000;
+      setActiveSection(target);
+      clearTimeout(releaseTimer);
+      history.replaceState(null, '', link.hash);
+      window.scrollTo({top:window.scrollY + target.getBoundingClientRect().top - readingLine(), behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+      releaseTimer = setTimeout(() => { requestedSection = null; queueActiveSection(); }, 3050);
+    });
+    const cancelRequestedOnUserScroll = () => {
+      if (!requestedSection) return;
+      requestedSection = null;
+      clearTimeout(releaseTimer);
+      queueActiveSection();
+    };
+    window.addEventListener('wheel', cancelRequestedOnUserScroll, {passive:true});
+    window.addEventListener('touchstart', cancelRequestedOnUserScroll, {passive:true});
+    window.addEventListener('keydown', event => {
+      if (requestedSection && ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key)) cancelRequestedOnUserScroll();
+    });
     window.addEventListener('scroll', queueActiveSection, {passive:true});
     window.addEventListener('resize', queueActiveSection);
-    docSidebar.addEventListener('click', event => { if (event.target.closest('a')) queueActiveSection(); });
     updateActiveSection();
   }
 

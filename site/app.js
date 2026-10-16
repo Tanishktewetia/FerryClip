@@ -47,6 +47,20 @@
         : 'Android APK download requested. Open it from Downloads and allow installing unknown apps if Android asks.'; });
   }));
 
+  const qrDialog = document.querySelector('#apk-qr-dialog');
+  const qrTrigger = document.querySelector('.apk-qr-trigger');
+  const qrClose = qrDialog?.querySelector('.apk-qr-close');
+  if (qrDialog && qrTrigger && qrClose && typeof qrDialog.showModal === 'function') {
+    qrTrigger.addEventListener('click', () => {
+      qrDialog.showModal();
+      qrClose.focus();
+    });
+    qrClose.addEventListener('click', () => qrDialog.close());
+    qrDialog.addEventListener('click', event => {
+      if (event.target === qrDialog) qrDialog.close();
+    });
+    qrDialog.addEventListener('close', () => qrTrigger.focus());
+  }
   const docSidebar = document.querySelector('.docs-sidebar');
   if (docSidebar) {
     const links = [...docSidebar.querySelectorAll('a[href^="#"]')];

@@ -118,3 +118,8 @@ html{scrollbar-gutter:stable;scrollbar-color:var(--scroll-thumb,var(--muted)) tr
 html{scroll-padding-top:88px}
 .docs-content section{scroll-margin-top:92px}
 @media(max-width:800px){.site-header{height:68px}.docs-content section{scroll-margin-top:84px}}
+
+.apk-qr-trigger{display:inline-flex;align-items:center;min-height:44px;margin-top:10px;padding:4px 0;border:0;background:transparent;color:var(--brand);font:inherit;font-size:13px;text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--brand) 45%,transparent);text-underline-offset:3px;cursor:pointer}.apk-qr-trigger:hover{text-decoration-color:currentColor}.apk-qr-trigger:focus-visible,.apk-qr-close:focus-visible{outline:3px solid var(--cta);outline-offset:3px}.apk-qr-dialog{position:fixed;inset:0;width:min(400px,calc(100% - 32px));max-width:none;max-height:calc(100% - 32px);margin:auto;padding:28px 26px 26px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink);text-align:center;box-shadow:0 24px 72px rgba(0,0,0,.34);overflow:auto}.apk-qr-dialog::backdrop{background:rgba(15,20,12,.72)}.apk-qr-dialog h2{margin:16px 0 8px;font-size:22px;line-height:1.25}.apk-qr-dialog p{max-width:320px;margin:0 auto 18px;color:var(--muted);font-size:14px;line-height:1.65}.apk-qr-close{display:block;min-width:64px;min-height:44px;margin:0 0 0 auto;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}.apk-qr-image{display:block;width:min(280px,75vw);height:auto;margin:0 auto;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
+@media(max-width:800px){.apk-qr{display:none}}
+
+@media(max-width:600px){.apk-qr-trigger{display:none}}

@@ -1,5 +1,9 @@
 {
   "buildCommand": "node site/build.cjs",
   "outputDirectory": "dist/site",
+  "redirects": [
+    { "source": "/index.html", "destination": "/", "permanent": true },
+    { "source": "/docs.html/", "destination": "/docs.html", "permanent": true }
+  ],
   "framework": null
 }

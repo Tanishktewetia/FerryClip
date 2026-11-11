@@ -2,6 +2,7 @@ package com.clipsync.android.ui
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,6 +14,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Search
@@ -267,19 +270,48 @@ private fun RowScope.HistoryFilterChip(label: String, count: Int, selected: Bool
     )
 }
 
+/** Upper bound on characters rendered in an expanded card; full clips (up to 1 MB) stay available through Copy. */
+private const val EXPANDED_DISPLAY_CHARS = 20_000
+
 @Composable
 private fun HistoryEntryCard(entry: HistoryEntry, onCopy: () -> Unit, onDelete: () -> Unit, onPin: () -> Unit) {
+    // Tapping the clip toggles between the two-line preview and the full text; only the Copy button copies.
+    var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
+    var overflows by remember(entry.id) { mutableStateOf(false) }
+    val fullText = entry.searchableText
+    val expandedText = remember(fullText) {
+        if (fullText.length <= EXPANDED_DISPLAY_CHARS) fullText
+        else fullText.substring(0, if (fullText[EXPANDED_DISPLAY_CHARS - 1].isHighSurrogate()) EXPANDED_DISPLAY_CHARS - 1 else EXPANDED_DISPLAY_CHARS)
+    }
+    val canExpand = expanded || overflows || fullText.length > entry.preview.length
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().animateContentSize(),
     ) {
-        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f).clickable(onClick = onCopy), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(entry.preview, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(entry.direction + " · " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(entry.timestamp)),
+        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            verticalAlignment = if (expanded) Alignment.Top else Alignment.CenterVertically) {
+            Column(
+                Modifier.weight(1f).clickable(
+                    enabled = canExpand,
+                    onClickLabel = if (expanded) "Collapse clip" else "Expand clip",
+                ) { expanded = !expanded },
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (expanded) Text(expandedText)
+                else Text(entry.preview, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { if (it.hasVisualOverflow) overflows = true })
+                if (expanded && expandedText.length < fullText.length) Text(
+                    "Showing the first ${"%,d".format(expandedText.length)} characters · use Copy for the full clip",
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(entry.direction + " · " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(entry.timestamp)),
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (canExpand) Icon(
+                        if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = null,
+                        modifier = Modifier.padding(start = 4.dp).size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 if (entry.pinned) Text("Pinned", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary)
                 if (entry.previewOnly) Text("Preview only · clip exceeds 1 MB", style = MaterialTheme.typography.labelSmall,

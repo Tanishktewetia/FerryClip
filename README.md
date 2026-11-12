@@ -24,7 +24,7 @@ FerryClip transfers clipboard text directly between a Windows PC and Android pho
 
 ## Downloads
 
-The current release is [FerryClip v1.0.0](https://github.com/Tanishktewetia/FerryClip/releases/tag/v1.0.0). Fixed-name downloads are available from the [latest release](https://github.com/Tanishktewetia/FerryClip/releases/latest):
+The current release is [FerryClip v1.0.1](https://github.com/Tanishktewetia/FerryClip/releases/tag/v1.0.1). Fixed-name downloads are available from the [latest release](https://github.com/Tanishktewetia/FerryClip/releases/latest):
 
 - **Windows installer (recommended):** [FerryClip-Windows-Setup.exe](https://github.com/Tanishktewetia/FerryClip/releases/latest/download/FerryClip-Windows-Setup.exe)
 - Windows portable: [FerryClip-Windows-Portable.zip](https://github.com/Tanishktewetia/FerryClip/releases/latest/download/FerryClip-Windows-Portable.zip)

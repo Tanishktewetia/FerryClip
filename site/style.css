@@ -123,3 +123,21 @@ html{scroll-padding-top:88px}
 @media(max-width:800px){.apk-qr{display:none}}
 
 @media(max-width:600px){.apk-qr-trigger{display:none}}
+
+/* SEO content additions */
+.h1-kicker{display:block;font-size:15px;line-height:1.4;letter-spacing:0;font-weight:600;color:var(--brand);margin-bottom:14px}
+.docs-content .breadcrumb{font-size:13px;color:var(--muted);margin-bottom:14px}.docs-content .breadcrumb a{text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--line)}
+.docs-content .byline{font-size:13px;color:var(--muted);margin-top:14px}
+.table-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:12px;-webkit-overflow-scrolling:touch}
+.compare-table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px;line-height:1.5}
+.compare-table th,.compare-table td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.compare-table thead th{background:var(--soft);font-weight:650;color:var(--ink)}
+.compare-table tbody th{font-weight:600;color:var(--ink);white-space:nowrap}
+.compare-table td{color:var(--muted)}.compare-table tr:last-child>*{border-bottom:0}
+.compare-table .ours{background:color-mix(in srgb,var(--gold) 16%,transparent)}
+.related-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:22px}
+.related-links a{display:block;border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--surface)}
+.related-links a:hover{border-color:var(--brand)}.related-links strong{display:block;color:var(--ink);font-size:15px}.related-links span{font-size:13px;color:var(--muted)}
+.docs-content .related-links a{text-decoration:none;color:inherit}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.faq-list p a{color:var(--brand);text-decoration:underline;text-underline-offset:3px}

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Share Clipboard Between Windows and Android (5 Ways)</title>
+<meta name="description" content="Five ways to copy and paste text between Windows and Android: FerryClip, Phone Link, SwiftKey, KDE Connect and Quick Share, with setup steps and trade-offs.">
+<meta name="color-scheme" content="light dark"><meta name="theme-color" content="#f6f5f1">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32"><link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css"><script src="app.js" defer></script>
+<link rel="canonical" href="https://www.ferryclip.app/share-clipboard-windows-android.html">
+<meta property="og:site_name" content="FerryClip"><meta property="og:type" content="article"><meta property="og:url" content="https://www.ferryclip.app/share-clipboard-windows-android.html"><meta property="og:title" content="How to Share Clipboard Between Windows and Android (5 Ways)"><meta property="og:description" content="Five ways to copy and paste text between a Windows PC and an Android phone, with setup steps and trade-offs."><meta property="og:image" content="https://www.ferryclip.app/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="FerryClip: copy on Windows, paste on Android. Free, open-source clipboard sync over local Wi-Fi."><meta property="og:locale" content="en_US"><meta property="article:published_time" content="2026-11-12"><meta property="article:modified_time" content="2026-11-12">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="How to Share Clipboard Between Windows and Android (5 Ways)"><meta name="twitter:description" content="Five ways to copy and paste text between a Windows PC and an Android phone, with setup steps and trade-offs."><meta name="twitter:image" content="https://www.ferryclip.app/og-image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[
+{"@type":"WebSite","@id":"https://www.ferryclip.app/#website","url":"https://www.ferryclip.app/","name":"FerryClip","inLanguage":"en"},
+{"@type":"TechArticle","@id":"https://www.ferryclip.app/share-clipboard-windows-android.html#article","headline":"How to Share Clipboard Between Windows and Android (5 Ways)","description":"Five ways to copy and paste text between Windows and Android: FerryClip, Phone Link, SwiftKey, KDE Connect and Quick Share, with setup steps and trade-offs.","url":"https://www.ferryclip.app/share-clipboard-windows-android.html","mainEntityOfPage":"https://www.ferryclip.app/share-clipboard-windows-android.html","image":"https://www.ferryclip.app/og-image.png","datePublished":"2026-11-12","dateModified":"2026-11-12","inLanguage":"en","author":{"@type":"Person","@id":"https://www.ferryclip.app/#author","name":"Tanishk Tewetia","url":"https://github.com/Tanishktewetia"},"publisher":{"@id":"https://www.ferryclip.app/#author"},"isPartOf":{"@id":"https://www.ferryclip.app/#website"},"about":[{"@type":"Thing","name":"Clipboard synchronization"},{"@id":"https://www.ferryclip.app/#app"}]},
+{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"FerryClip","item":"https://www.ferryclip.app/"},{"@type":"ListItem","position":2,"name":"Share clipboard between Windows and Android","item":"https://www.ferryclip.app/share-clipboard-windows-android.html"}]}]}</script>
+</head><body>
+<a class="skip" href="#main">Skip to content</a><header class="site-header"><div class="container nav"><a class="brand" href="/" aria-label="FerryClip home"><img src="logo-68.png" width="34" height="34" alt="">FerryClip</a><nav id="primary-navigation" aria-label="Main navigation"><a href="/#how-it-works">How it works</a><a href="/#screenshots">Windows app</a><a href="docs.html#start">Setup &amp; help</a><a href="https://github.com/Tanishktewetia/FerryClip" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><button class="nav-menu-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation"><span></span><span></span></button><div class="nav-actions"><button class="theme-toggle" aria-label="Switch to dark theme" title="Change theme"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10Z"/></svg></button><a class="button small" href="/#download">Download</a></div></div></header>
+<main id="main" class="container docs-layout"><aside class="docs-sidebar" aria-label="On this page"><strong>ON THIS PAGE</strong><a href="#quick-answer">Quick answer</a><a href="#ferryclip">1. FerryClip</a><a href="#phone-link">2. Phone Link</a><a href="#swiftkey">3. SwiftKey</a><a href="#kde-connect">4. KDE Connect</a><a href="#quick-share">5. Quick Share</a><a href="#compare">Comparison table</a><a href="#android-limits">Why Android needs a tap</a><a href="#troubleshoot">Troubleshooting</a><a href="#faq">FAQ</a></aside>
+<article class="docs-content">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">FerryClip</a> › Guides</nav>
+<span class="overline">GUIDE</span>
+<h1>How to share your clipboard between Windows and Android</h1>
+<p class="lead">You copied a link, an address, or a one-time code on your PC and need it on your phone, or the other way round. Emailing it to yourself works, but there are faster ways. Here are five that work today, with what each one needs and where it falls short.</p>
+<p class="byline">By <a href="https://github.com/Tanishktewetia">Tanishk Tewetia</a>, developer of FerryClip · Last reviewed November 12, 2026</p>
+<div class="callout"><strong>Disclosure:</strong> FerryClip is our app, so it is listed first. The other four are made by Microsoft, KDE and Google; each is a reasonable choice in the situations described below.</div>
+
+<section id="quick-answer"><h2>Quick answer</h2>
+<ul>
+<li><strong>Any Android phone, no account, nothing leaves your Wi-Fi:</strong> use <a href="/">FerryClip</a> or KDE Connect.</li>
+<li><strong>A recent Samsung, HONOR, OPPO, OnePlus or other supported phone, and you already use Phone Link:</strong> turn on Phone Link's cross-device copy and paste.</li>
+<li><strong>You already type with Microsoft SwiftKey and use a Microsoft account:</strong> turn on SwiftKey clipboard sync.</li>
+<li><strong>You only need to move text once in a while:</strong> Google Quick Share is enough.</li>
+</ul></section>
+
+<section id="ferryclip"><h2>1. FerryClip (free, open source, local Wi-Fi)</h2>
+<p>FerryClip is a small Windows tray app and Android app that pair with a six-digit code. Text you copy on Windows appears on the unlocked phone automatically. To send text the other way, copy it on Android and tap <strong>Send to PC</strong> in the Quick Settings panel or FerryClip's notification.</p>
+<p>Clipboard traffic goes directly between your devices over TLS 1.3 with mutual authentication. There is no FerryClip server, cloud clipboard or account.</p>
+<h3>Set it up</h3>
+<ol>
+<li><a href="/#download">Download FerryClip</a> for Windows (installer or portable ZIP) and the Android APK.</li>
+<li>Connect the PC and phone to the same Wi-Fi network or to the PC's hotspot.</li>
+<li>On Windows, open FerryClip from the system tray and choose <strong>Generate code to connect</strong>.</li>
+<li>On Android, open FerryClip and enter the six-digit code shown on the PC.</li>
+<li>Optional: add the <strong>Send to PC</strong> Quick Settings tile so sending from the phone is one tap.</li>
+</ol>
+<p><strong>Good for:</strong> any Android 10+ phone, privacy-sensitive text, offices or homes without a Microsoft or Google account on the PC.<br><strong>Limits:</strong> plain text only; no iPhone; both devices must be on the same reachable network; the Windows build is not yet code-signed, so SmartScreen shows a warning on first install; the Android app is installed from an APK, not the Play Store. The <a href="docs.html">setup guide</a> covers each step.</p></section>
+
+<section id="phone-link"><h2>2. Microsoft Phone Link: cross-device copy and paste</h2>
+<p>Phone Link is built into Windows 10 and 11 and pairs with the Link to Windows app on Android. Its cross-device copy and paste feature syncs text and images in both directions. According to <a href="https://support.microsoft.com/en-us/help/4539429" rel="noopener">Microsoft's support page</a>, it works only on supported phones: Samsung devices on One UI 2.1 or later, Surface Duo, and selected HONOR, OPPO, OnePlus, Realme, ASUS, vivo and Xiaomi models.</p>
+<ol>
+<li>Open Phone Link on Windows and pair your phone if you have not already.</li>
+<li>Go to <strong>Settings → Features → Cross-device copy and paste</strong> and turn it on.</li>
+<li>Copy on one device, paste on the other.</li>
+</ol>
+<p><strong>Good for:</strong> supported phones where Phone Link is already set up.<br><strong>Limits:</strong> phone support is limited, and it can use mobile data when you allow sync over mobile data. If your phone is not on the list, see <a href="phone-link-clipboard-alternative.html">alternatives to Phone Link clipboard sync</a>.</p></section>
+
+<section id="swiftkey"><h2>3. Microsoft SwiftKey keyboard</h2>
+<p>If SwiftKey is your Android keyboard, it can sync clipboard text with Windows clipboard history through your Microsoft account.</p>
+<ol>
+<li>On Windows, open <strong>Settings → System → Clipboard</strong>, turn on <strong>Clipboard history</strong> and <strong>Sync across your devices</strong>, signed in with a Microsoft account.</li>
+<li>On Android, install SwiftKey, sign in with the same account and turn on clipboard sync in SwiftKey's clipboard settings.</li>
+</ol>
+<p><strong>Good for:</strong> people who already like SwiftKey.<br><strong>Limits:</strong> you must use SwiftKey as your keyboard and sign in to a Microsoft account, and clipboard text syncs through Microsoft's cloud.</p></section>
+
+<section id="kde-connect"><h2>4. KDE Connect</h2>
+<p>KDE Connect is a free, open-source project from the KDE community that links a phone and a computer over the local network. It has a Windows version and does much more than the clipboard: file sharing, notifications, media controls and remote input.</p>
+<p>Clipboard text from the PC reaches the phone automatically. Sending from a modern Android phone is manual: open the KDE Connect notification and tap <strong>Send clipboard</strong>, the same Android restriction explained <a href="#android-limits">below</a>.</p>
+<p><strong>Good for:</strong> people who want a full phone-to-PC toolkit.<br><strong>Limits:</strong> more features mean more permissions and settings to review if you only need the clipboard.</p></section>
+
+<section id="quick-share"><h2>5. Google Quick Share (manual)</h2>
+<p>Quick Share for Windows can move text as well as files. To send from Windows, copy the text, open Quick Share and paste it; to send from Android, share the text to Quick Share and pick your PC. It is a send-it-once tool, not continuous sync.</p>
+<p><strong>Good for:</strong> occasional transfers when Quick Share is already installed.<br><strong>Limits:</strong> several steps every time.</p></section>
+
+<section id="compare"><h2>Comparison table</h2>
+<div class="table-wrap"><table class="compare-table">
+<caption class="sr-only">Clipboard sharing methods for Windows and Android compared</caption>
+<thead><tr><th scope="col">Method</th><th scope="col">PC → phone</th><th scope="col">Phone → PC</th><th scope="col">Account</th><th scope="col">Data path</th><th scope="col">Phones</th></tr></thead>
+<tbody>
+<tr class="ours"><th scope="row">FerryClip</th><td>Automatic</td><td>One tap (tile or notification)</td><td>None</td><td>Local network, TLS 1.3</td><td>Android 10+</td></tr>
+<tr><th scope="row">Phone Link</th><td>Automatic</td><td>Automatic</td><td>Phone Link pairing</td><td>Wi-Fi or mobile data</td><td>Supported models only</td></tr>
+<tr><th scope="row">SwiftKey</th><td>Automatic</td><td>Automatic while typing with SwiftKey</td><td>Microsoft account</td><td>Microsoft cloud</td><td>Any phone with SwiftKey</td></tr>
+<tr><th scope="row">KDE Connect</th><td>Automatic</td><td>One tap in notification</td><td>None</td><td>Local network</td><td>Most Android phones</td></tr>
+<tr><th scope="row">Quick Share</th><td>Manual</td><td>Manual</td><td>Google account settings</td><td>Nearby / local</td><td>Most Android phones</td></tr>
+</tbody></table></div>
+<p>Details checked in November 2026. Features change, so confirm on each project's own site before relying on them.</p></section>
+
+<section id="android-limits"><h2>Why sending from Android takes one tap</h2>
+<p>Since Android 10, apps cannot read the clipboard in the background. Only the app you are using, or your default keyboard, can see what you copied. That is a privacy protection: it stops apps from silently collecting passwords and messages.</p>
+<p>So apps that are not your keyboard, such as FerryClip and KDE Connect, ask you to tap a notification button or Quick Settings tile when you want to send. Keyboard-based tools like SwiftKey can sync automatically because they are the keyboard. The other direction, PC to phone, does not have this limit, which is why it can be automatic.</p></section>
+
+<section id="troubleshoot"><h2>Troubleshooting local clipboard sync</h2>
+<ul>
+<li><strong>Devices cannot see each other:</strong> confirm both are on the same network. Guest Wi-Fi and some office networks block device-to-device traffic (client isolation). Try the PC's mobile hotspot instead.</li>
+<li><strong>Windows firewall:</strong> if Windows marked your Wi-Fi as a Public network, local connections may be blocked. Switch the network to Private if you trust it.</li>
+<li><strong>VPN on either device:</strong> some VPNs send all traffic away from the local network. Allow LAN access or pause the VPN.</li>
+<li><strong>Phone stops receiving after a while:</strong> manufacturer battery savers can stop background apps. Exempt the app from battery optimization.</li>
+<li><strong>Text arrives but does not paste:</strong> Android may apply incoming text only after you unlock the phone.</li>
+</ul>
+<p>FerryClip-specific steps are in the <a href="docs.html#troubleshoot">troubleshooting guide</a>.</p></section>
+
+<section id="faq"><h2>Frequently asked questions</h2>
+<h3>Can I copy and paste between Windows and Android without an account?</h3>
+<p>Yes. FerryClip and KDE Connect both work over your local network without signing in to a Microsoft or Google account.</p>
+<h3>Is there a built-in way on Windows 11?</h3>
+<p>Phone Link's cross-device copy and paste is built in, but only for supported phones. Windows clipboard history can also sync to Android through SwiftKey with a Microsoft account.</p>
+<h3>Does clipboard sync work without internet?</h3>
+<p>Local-network tools such as FerryClip and KDE Connect only need the PC and phone to reach each other on the same Wi-Fi or hotspot. Cloud-based options such as SwiftKey need an internet connection.</p>
+<h3>Can I sync the clipboard with an iPhone?</h3>
+<p>Not with FerryClip, which supports Windows and Android only. Apple's Universal Clipboard works between Apple devices.</p>
+<h3>Is clipboard sync safe for passwords?</h3>
+<p>Prefer a method that keeps text on your own network and encrypts it in transit, and turn off saved clipboard history for sensitive items. FerryClip can skip recognized sensitive clips when saving history.</p></section>
+
+<section id="next"><h2>Try it</h2>
+<p>FerryClip is free and open source under the MIT License. Set-up takes about two minutes.</p>
+<p><a class="button" href="/#download">Download FerryClip <span class="button-icon" aria-hidden="true">↓</span></a></p>
+<div class="related-links"><a href="docs.html"><strong>FerryClip setup guide</strong><span>Install, pair, send text, troubleshoot.</span></a><a href="phone-link-clipboard-alternative.html"><strong>Phone Link clipboard alternative</strong><span>When your phone isn't supported.</span></a><a href="https://github.com/Tanishktewetia/FerryClip"><strong>Source code on GitHub</strong><span>Inspect how FerryClip works.</span></a></div></section>
+</article></main>
+<footer class="container footer"><a class="brand" href="/"><img src="logo-60.png" width="30" height="30" alt="">FerryClip</a><span>FerryClip is open source under the <a href="https://github.com/Tanishktewetia/FerryClip/blob/main/LICENSE">MIT License</a> · <a href="https://github.com/Tanishktewetia/FerryClip/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a> · <a href="https://github.com/Tanishktewetia/FerryClip">GitHub repository</a>.</span><div><a href="share-clipboard-windows-android.html">Clipboard sync guide</a><a href="phone-link-clipboard-alternative.html">Phone Link alternative</a><a href="docs.html#privacy">Privacy</a><a href="/#download">Download</a></div></footer>
+</body></html>

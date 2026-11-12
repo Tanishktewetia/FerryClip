@@ -5,7 +5,7 @@ const path = require('node:path');
 const root = fs.realpathSync(path.resolve(__dirname, '../dist/site'));
 const port = Number(process.env.PORT || 4177);
 const host = process.argv.includes('--lan') ? '0.0.0.0' : '127.0.0.1';
-const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.apk': 'application/vnd.android.package-archive', '.exe': 'application/octet-stream', '.json': 'application/json; charset=utf-8', '.txt': 'text/plain; charset=utf-8' };
+const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.apk': 'application/vnd.android.package-archive', '.exe': 'application/octet-stream', '.json': 'application/json; charset=utf-8', '.txt': 'text/plain; charset=utf-8' };
 http.createServer((req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, { Allow: 'GET, HEAD' }); res.end(); return; }
   try {
